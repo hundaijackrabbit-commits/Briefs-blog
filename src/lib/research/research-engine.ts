@@ -3,11 +3,12 @@ import { decomposeResearchRequest } from "@/lib/research/decompose";
 import { dedupeSources, rankDiscoveredUrl, sourceDiversity } from "@/lib/research/rank";
 import { wikipediaProvider } from "@/lib/research/providers/wikipedia";
 import { wikidataProvider } from "@/lib/research/providers/wikidata";
+import { gdeltProvider } from "@/lib/research/providers/gdelt";
 import type { ResearchFinding, ResearchGraph, ResearchProvider, ResearchSource } from "@/lib/research/types";
 import { stableResearchId } from "@/lib/research/http";
 import { persistResearchGraph } from "@/lib/research/persistence";
 
-const providers:ResearchProvider[]=[wikipediaProvider,wikidataProvider];
+const referenceProviders:ResearchProvider[]=[wikipediaProvider,wikidataProvider];
 const memoryCache=new Map<string,{expires:number;graph:ResearchGraph}>();
 
 async function withBudget<T>(promise:Promise<T>,ms=7000):Promise<T>{
@@ -33,6 +34,7 @@ function mergeDescriptions(parts:string[]){
 
 async function runSubject(subject:string,request:BriefRequest){
   const plan=decomposeResearchRequest({...request,subject});
+  const providers=plan.intent==="current"?[gdeltProvider,wikipediaProvider,wikidataProvider]:referenceProviders;
   const settled=await Promise.allSettled(providers.map(provider=>withBudget(provider.research(subject,plan))));
   const canonical:string[]=[]; const descriptions:string[]=[]; const findings:ResearchFinding[]=[]; const sources:ResearchSource[]=[]; const discovered:string[]=[];
   for(const result of settled){
@@ -56,15 +58,19 @@ export async function researchSubject(request:BriefRequest):Promise<ResearchGrap
   else if(request.sourcePolicy==="news") sources=sources.filter(s=>s.kind==="reporting");
   else if(request.sourcePolicy==="verified"||!request.sourcePolicy) sources=sources.filter(s=>["A","B"].includes(s.tier));
   const allowed=new Set(sources.map(s=>s.id));
-  const findings=subjectResults.flatMap(r=>r.findings).filter(f=>f.sourceIds.some(id=>allowed.has(id))).slice(0,request.depth==="flash"?2:request.depth==="quick"?4:request.depth==="standard"?8:18);
+  const sourceById=new Map(sources.map(s=>[s.id,s] as const));
+  const allEligibleFindings=subjectResults.flatMap(r=>r.findings).filter(f=>f.sourceIds.some(id=>allowed.has(id)));
+  const reportingFindings=allEligibleFindings.filter(f=>f.sourceIds.some(id=>{const source=sourceById.get(id);return source?.kind==="reporting"||source?.kind==="primary";}));
+  const orderedFindings=plan.intent==="current"?[...reportingFindings,...allEligibleFindings.filter(f=>!reportingFindings.includes(f))]:allEligibleFindings;
+  const findings=orderedFindings.slice(0,request.depth==="flash"?2:request.depth==="quick"?4:request.depth==="standard"?8:18);
   const discovered=[...new Set(subjectResults.flatMap(r=>r.discovered))].sort((a,b)=>rankDiscoveredUrl(b)-rankDiscoveredUrl(a)).slice(0,12);
   const confidence=confidenceFor(sources,findings);
-  const sufficient=findings.length>=2&&sources.length>=1;
+  const sufficient=plan.intent==="current"?reportingFindings.length>=1&&sources.some(s=>s.kind==="reporting"||s.kind==="primary"):findings.length>=2&&sources.length>=1;
   const missingEvidence:string[]=[];
-  if(!sufficient) missingEvidence.push(request.sourcePolicy&&request.sourcePolicy!=="verified"?`The selected ${request.sourcePolicy} source policy did not return enough eligible evidence`:"Research providers did not return enough evidence to construct a safe Brief");
+  if(!sufficient) missingEvidence.push(request.sourcePolicy&&request.sourcePolicy!=="verified"?`The selected ${request.sourcePolicy} source policy did not return enough eligible evidence`:plan.intent==="current"?"Current reporting providers did not return enough eligible evidence; Briefs will not substitute encyclopedia history for a current update":"Research providers did not return enough evidence to construct a safe Brief");
   if(sourceDiversity(sources)<2) missingEvidence.push("Independent corroboration is still limited; current findings come from one source family");
-  if(plan.freshness==="live") missingEvidence.push("A time-sensitive query should be corroborated against primary or current reporting sources before being treated as fully current");
-  const description=plan.intent==="compare"?subjectResults.map(r=>`${r.canonical}: ${r.description}`).filter(x=>x.length>3).join("\n\n"):subjectResults[0]?.description||findings.map(f=>f.statement).slice(0,4).join(" ");
+  if(plan.freshness==="live"&&sourceDiversity(sources)<2) missingEvidence.push("A time-sensitive query should be corroborated against an additional independent primary or reporting source before being treated as fully current");
+  const description=plan.intent==="current"?(reportingFindings.length?reportingFindings.map(f=>f.statement).slice(0,5).join(" "):`Briefs could not gather enough eligible current reporting to safely summarize ${request.subject}.`):findings.length?findings.map(f=>f.statement).slice(0,4).join(" "):(plan.intent==="compare"?subjectResults.map(r=>`${r.canonical}: ${r.description}`).filter(x=>x.length>3).join("\n\n"):subjectResults[0]?.description||"");
   const generatedAt=new Date().toISOString();
   const graph:ResearchGraph={runId:stableResearchId("research",`${key}:${generatedAt}`),plan,canonicalSubject:plan.intent==="compare"?plan.subjects.join(" vs "):subjectResults[0]?.canonical||request.subject,description,findings,sources,discoveredUrls:discovered,missingEvidence,confidence,sufficient,generatedAt,knowledgeCutoff:generatedAt};
   memoryCache.set(key,{expires:Date.now()+10*60*1000,graph});

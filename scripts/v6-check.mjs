@@ -17,7 +17,7 @@ const must=[
 const failures=[];
 for(const rel of must) if(!fs.existsSync(path.join(root,rel))) failures.push(`missing ${rel}`);
 const pkg=JSON.parse(fs.readFileSync(path.join(root,"package.json"),"utf8"));
-if(pkg.version!=="0.6.0") failures.push(`package version is ${pkg.version}, expected 0.6.0`);
+if(Number(pkg.version.split(".").slice(0,2).join("."))<0.6) failures.push(`package version is ${pkg.version}, expected 0.6.0 or later`);
 const store=fs.readFileSync(path.join(root,"src/lib/knowledge/store.ts"),"utf8");
 if(!store.includes("researchSubject(request)")) failures.push("Knowledge Store does not invoke V6 research path");
 if(!store.includes('"research"')) failures.push("Knowledge Store is missing research source mode");

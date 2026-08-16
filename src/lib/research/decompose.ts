@@ -9,6 +9,7 @@ function splitComparison(subject:string){
 }
 
 function inferIntent(subject:string,parts:string[]):ResearchIntent{
+  if(/\b(stock|stocks|share price|stock price|ticker|market cap|valuation|earnings|revenue|profit|eps|dividend|financials?)\b/i.test(subject)) return "finance";
   if(parts.length===2) return "compare";
   if(/\b(today|latest|current|now|this week|recent)\b/i.test(subject)) return "current";
   if(/\b(history|historical|origin|timeline|war|ancient|century)\b/i.test(subject)) return "history";
@@ -23,7 +24,7 @@ export function decomposeResearchRequest(request:BriefRequest):ResearchQueryPlan
   const normalized=request.subject.replace(/\s+/g," ").trim().slice(0,200);
   const subjects=splitComparison(normalized).slice(0,2);
   const intent=inferIntent(normalized,subjects);
-  const freshness=request.freshnessRequirement==="historical"||intent==="history"?"historical":request.freshnessRequirement==="recent"||intent==="current"?"live":"current";
+  const freshness=request.freshnessRequirement==="historical"||intent==="history"?"historical":request.freshnessRequirement==="recent"||intent==="current"||intent==="finance"?"live":"current";
   const maxSources=request.depth==="research"?10:request.depth==="deep"?8:6;
   return {original:request.subject,normalized,intent,subjects,freshness,maxSources};
 }

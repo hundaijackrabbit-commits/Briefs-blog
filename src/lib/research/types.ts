@@ -1,6 +1,6 @@
 import type { Tier } from "@/lib/types";
 
-export type ResearchIntent="explain"|"compare"|"current"|"history"|"person"|"organization"|"work"|"general";
+export type ResearchIntent="explain"|"compare"|"current"|"history"|"person"|"organization"|"work"|"finance"|"general";
 
 export type ResearchQueryPlan={
   original:string;

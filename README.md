@@ -1,32 +1,44 @@
 # Briefs.blog
 
-Briefs is a living knowledge and briefing platform. The public product stays intentionally simple — **Brief me on …** — while the backend maintains entities, claims, evidence, research, changes, freshness and editorial state.
+Briefs is a living knowledge and briefing platform. The public product stays intentionally simple — **Brief me on …** — while the backend maintains entities, claims, evidence, research, changes, freshness, query intent and editorial state.
 
-## V6 quick start
+## V7 quick start
 
 ```bash
 npm install
 npm run typecheck
-npm run v6check
+npm run v7check
+npm run intentcheck
 npm run build
 npm run dev
 ```
 
-V6 has three answer paths:
+V7 routes questions before researching them:
 
-1. **Knowledge DB** — durable verified knowledge when `DATABASE_URL` is configured.
-2. **Verified starter corpus** — safe degraded coverage for selected baseline subjects.
-3. **Live Research** — unknown subjects automatically trigger bounded Wikipedia/Wikidata research and return a provenance-backed baseline when sufficient evidence is found.
+1. **Finance / market** — resolve public company and ticker, pull primary SEC filings/XBRL facts, optionally add market quotes, then surface current catalysts.
+2. **Current / news** — prioritize recent reporting and freshness rather than encyclopedia history.
+3. **Reference / evergreen** — retain the V5/V6 verified knowledge + Wikipedia/Wikidata research path.
+4. **Coverage gaps** — stay explicit; no fabricated facts.
 
-A failed research provider does not fail the public site. If research cannot gather enough evidence safely, Briefs keeps the coverage gap explicit.
+### Optional market quote data
 
-To bootstrap/update Postgres:
+Set `ALPHA_VANTAGE_API_KEY` to activate the current quote adapter. Without it, a query such as `Apple stock` still returns an investor-focused SEC brief but explicitly states that live/delayed price data is not connected.
+
+### Postgres
 
 ```bash
-# set DATABASE_URL in your shell first
 npm run db:bootstrap
 ```
 
-Configure `DATABASE_URL`, `CRON_SECRET`, `ADMIN_TOKEN` and optionally `BRIEFS_USER_AGENT` in Vercel.
+When `DATABASE_URL` is configured, V7 also records query-intent observations, market snapshots and change candidates for later continuous intelligence.
 
-See `SYSTEMS.md` for the canonical architecture ledger and `V6-BLUEPRINT.md` for this release.
+### Competitive prompt evaluation
+
+With the app running locally or deployed:
+
+```bash
+$env:BRIEFS_EVAL_BASE_URL="https://your-briefs-domain.example"
+npm run eval:v7
+```
+
+See `COMPETITIVE-BENCHMARK-V7.md`, `V7-BLUEPRINT.md`, and `SYSTEMS.md`.

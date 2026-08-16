@@ -3,6 +3,8 @@ import { resolveEntities } from "@/lib/engine/entity-resolution";
 import type { BriefRequest } from "@/lib/types";
 import { findStarterTopic } from "@/lib/knowledge/starter";
 import { researchSubject } from "@/lib/research/research-engine";
+import { classifyQuery } from "@/lib/intelligence/query-intent";
+import { researchFinance } from "@/lib/research/finance-engine";
 
 export type KnowledgeClaim={
   id:string; predicate:string; valueText:string; text:string; confidence:"high"|"medium"|"low";
@@ -66,9 +68,9 @@ function researchBundle(graph:Awaited<ReturnType<typeof researchSubject>>,reques
     description:graph.description||`Briefs researched ${request.subject}, but the available evidence was too thin to summarize safely.`,
     whyItMatters:"",
     claims:graph.findings.map(f=>({id:f.id,predicate:f.predicate,valueText:f.valueText,text:f.statement,confidence:f.confidence,verificationStatus:f.verificationStatus,lastVerifiedAt:graph.knowledgeCutoff,sourceIds:f.sourceIds.filter(id=>sourceIds.has(id))})),
-    changes:[],
+    changes:graph.plan.intent==="current"?graph.sources.filter(s=>s.kind==="reporting"&&s.publishedAt).slice(0,7).map((s,index)=>({id:`research-change-${s.id}`,summary:s.title,changedAt:s.publishedAt as string,importance:65-index*3})):[],
     sources:graph.sources.map(s=>({id:s.id,name:`${s.name} — ${s.title}`,url:s.url,tier:s.tier,kind:s.kind})),
-    watchItems:[],
+    watchItems:graph.plan.intent==="current"?["New primary-source confirmations","Material follow-up reporting from independent outlets","Whether the reported change persists or is superseded"]:[],
     knowledgeCutoff:graph.knowledgeCutoff,
     researchNeeded:!graph.sufficient||graph.missingEvidence.length>0,
     missingEvidence:graph.missingEvidence,
@@ -78,6 +80,15 @@ function researchBundle(graph:Awaited<ReturnType<typeof researchSubject>>,reques
 }
 
 export async function loadKnowledge(request:BriefRequest):Promise<KnowledgeBundle>{
+  const intent=classifyQuery(request);
+  if(intent.domain==="finance"){
+    try{
+      const finance=await researchFinance(request,intent);
+      if(finance) return finance;
+    }catch(error){
+      console.error("Briefs V7 finance research fallback",error);
+    }
+  }
   if(process.env.DATABASE_URL){
     try{
       const database=await loadDatabaseKnowledge(request);
@@ -87,7 +98,7 @@ export async function loadKnowledge(request:BriefRequest):Promise<KnowledgeBundl
     }
   }
   const starter=loadStarterKnowledge(request);
-  const shouldResearch=starter.mode==="empty"||(starter.researchNeeded&&request.depth==="research");
+  const shouldResearch=intent.domain==="current"||starter.mode==="empty"||(starter.researchNeeded&&request.depth==="research");
   if(!shouldResearch) return starter;
   try{
     const graph=await researchSubject(request);

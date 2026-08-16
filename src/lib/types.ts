@@ -79,4 +79,7 @@ export interface BriefResult {
   knowledgeCutoff:string;
   researchNeeded:boolean;
   sourceMode:"database"|"starter"|"research"|"empty";
+  intent?:string;
+  lens?:string;
+  freshnessStatus?:"live"|"current"|"historical";
 }

@@ -6,7 +6,7 @@ export async function fetchJson<T>(url:string,timeoutMs=DEFAULT_TIMEOUT):Promise
   try{
     const res=await fetch(url,{signal:controller.signal,headers:{
       accept:"application/json",
-      "user-agent":process.env.BRIEFS_USER_AGENT||"BriefsBlog/0.6 (+https://briefs-blog.vercel.app)"
+      "user-agent":process.env.BRIEFS_USER_AGENT||"BriefsBlog/0.7 (+https://briefs-blog.vercel.app)"
     },cache:"no-store"});
     if(!res.ok) throw new Error(`HTTP ${res.status} from ${new URL(url).hostname}`);
     return await res.json() as T;

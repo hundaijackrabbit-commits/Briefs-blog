@@ -1,21 +1,23 @@
-# Briefs.blog version 0.6.0
+# Briefs.blog version 0.7.0
 
-**Core release:** V6 — Research & Source Discovery Engine
+**Core release:** V7 — Query Intelligence, Finance & Change Routing
 
-V6 makes coverage gaps actionable. Unknown subjects now trigger bounded server-side research instead of immediately stopping at `Research needed`.
+V7 makes Briefs answer the *kind* of question the user asked, not just the subject noun. `Apple stock` now routes to an investor/market path instead of a generic Apple history lookup.
 
 Key additions:
-- generic Question Decomposition Engine
-- live keyless Wikipedia + Wikidata research providers
-- source ranking and source-family independence checks
-- hard provider time budgets and graceful fallback
-- temporary Research Graph with claim/evidence provenance
-- persisted research runs/evidence/staged findings when Postgres is connected
-- research context storage foundation
-- `LIVE RESEARCH` public source mode
-- evidence counts at the claim/fact level
-- broader entity taxonomy for works, events, places, franchises and fictional characters
-- `/api/research/status`
-- V6 architecture validator
+- Query Intent Engine with domain, task, entity query, freshness and effective perspective
+- market-movement routing (`Why is Apple stock down today?`) with causal-inference guardrails
+- bare-ticker recognition (`AAPL`) and stronger finance entity cleaning
+- intent-specific Answer Contracts
+- SEC public-company/ticker resolver
+- SEC filings + XBRL financial-facts provider (Tier A primary evidence)
+- optional Alpha Vantage quote adapter with explicit freshness/entitlement labeling
+- recent-reporting discovery through GDELT
+- current-query routing that prioritizes recent reporting and refuses to substitute encyclopedia history when current evidence is missing
+- source-policy controls in Brief Me
+- dated filing/reporting change candidates
+- persistence for query-intent observations, market snapshots and change candidates when Postgres is connected
+- competitive capability benchmark + deployed prompt evaluation harness
+- visible routing badges for intent, lens and freshness
 
-V6 preserves every tracked V1–V5 reliability, knowledge, editorial and Brief Me system. `SYSTEMS.md` is the non-negotiable scope ledger through V10.
+V7 preserves V1–V6. V8–V10 remain Personal Intelligence, Authority/Distribution, and production integration/scale/security respectively.

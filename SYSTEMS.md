@@ -8,8 +8,8 @@ This file is the non-negotiable scope ledger. No later release may silently dele
 - V3 — knowledge intelligence — complete/foundation
 - V4 — autonomous editorial foundation — complete/foundation
 - V5 — living knowledge MVP — complete/foundation
-- V6 — research & source-discovery engine — current
-- V7 — daily change intelligence & continuous maintenance — planned
+- V6 — research & source-discovery engine — complete/foundation
+- V7 — query intelligence, finance routing & change-intelligence expansion — current
 - V8 — personal intelligence, accounts, packs & alerts — planned
 - V9 — authority/distribution: SEO, answer-engine visibility, feeds, audio, API — planned
 - V10 — production integration, scale, security, observability and product completion — planned
@@ -62,7 +62,7 @@ Patch releases such as V4.1 do not consume a major-version slot.
 - AUTO / REVIEW / MANUAL routing — operational
 - Section dependency mapping — operational foundation
 - Editorial revision proposals — operational foundation
-- Brief Composer — operational deterministic core; richer composition through V6–V7
+- Brief Composer — operational deterministic core; V7 intent-specific answer contracts operational foundation
 - Editorial review queue — operational
 - Transactional publishing — operational foundation
 - Approval/rejection/defer — operational
@@ -80,16 +80,16 @@ Patch releases such as V4.1 do not consume a major-version slot.
 - Database-first Fast Path — V5 operational
 - Verified fallback path — V5 operational
 - Depth selector — operational foundation
-- Perspective selector — UI operational; semantic tailoring matures V7
+- Perspective selector — operational; V7 automatically applies investor lens to finance queries unless explicitly overridden
 - Evidence list — V5 operational
 - Claim-level evidence counts — V6 operational foundation
-- Evidence drawer/claim-level inspection — V7 planned
+- Evidence drawer/claim-level inspection — V8 planned; V7 shows claim evidence counts + source links
 - Explicit knowledge cutoff — operational
 - Research-needed state — operational
 - Research request persistence — V5 foundation
-- Follow-up conversational context storage — V6 foundation; product conversation loop V7
-- Compare/query decomposition — V6 foundation; full entity comparison surface V7
-- “What changed?” — V7 planned product surface
+- Follow-up conversational context storage — V6 foundation; product conversation loop V8
+- Compare/query decomposition — V6 foundation; full entity comparison surface V8
+- “What changed?” — V7 operational foundation for finance/current queries; continuous maintenance continues through V8/V10
 - “Since I was here” — V8 planned
 - Read/listen/watch/export renderers — V9 planned
 
@@ -104,12 +104,34 @@ Patch releases such as V4.1 do not consume a major-version slot.
 - Missing-evidence acquisition — V6 operational foundation
 - Temporary research graph / staged findings — V6 operational
 - Research-run/evidence/finding persistence — V6 operational when Postgres is configured
-- Reviewed knowledge insertion — V6 data foundation; admin promotion workflow matures V7
+- Reviewed knowledge insertion — V6 data foundation; admin promotion workflow matures V8/V10
 - Research context storage — V6 foundation
-- Emerging-topic detection — V7
-- Velocity/trend engine — V7
-- Briefs Signals — V7/V9
+- Query Intent Engine — V7 operational
+- Intent-specific Answer Contracts — V7 operational foundation (market snapshot, market move, financials, current/reference)
+- SEC company/ticker resolver — V7 operational
+- SEC filings/XBRL provider — V7 operational
+- Optional market quote adapter — V7 operational foundation
+- GDELT current-reporting discovery — V7 operational foundation
+- Query-intent observation persistence — V7 operational when Postgres is configured
+- Market snapshot persistence — V7 operational when Postgres is configured
+- Change-candidate persistence — V7 operational when Postgres is configured
+- Competitive prompt evaluation harness — V7 operational
+- Emerging-topic detection — V8/V10
+- Velocity/trend engine — V8/V10
+- Briefs Signals — V9/V10
 - Proprietary indexes/datasets — V9/V10
+
+## Query intelligence & domain routing
+- Query Intent Engine — V7 operational
+- Domain routing: finance / current / reference / general — V7 operational
+- Effective perspective routing — V7 operational foundation
+- Freshness requirement routing — V7 operational foundation
+- Source-policy controls — V7 operational UI + API
+- SEC primary financial evidence — V7 operational
+- Optional licensed/specialist quote adapter — V7 operational foundation
+- Current reporting discovery — V7 operational foundation
+- Finance `What changed` candidates — V7 operational foundation
+- Query evaluation/benchmark suite — V7 operational
 
 ## Personal intelligence
 - Accounts/preferences — V8

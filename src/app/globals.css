@@ -20,3 +20,8 @@
 
 /* V5 living knowledge evidence surface */
 .brief-sources{display:grid;gap:.65rem}.brief-sources a{display:flex;justify-content:space-between;gap:1rem;text-decoration:none;color:inherit;border-top:1px solid rgba(127,127,127,.22);padding:.9rem 0}.brief-sources a:first-child{border-top:0}.brief-sources span,.brief-meta{opacity:.62;font-size:.84rem}.brief-watch{margin:.5rem 0 0;padding-left:1.2rem;display:grid;gap:.5rem}.brief-result a:hover strong{text-decoration:underline}
+
+/* V7 query-intelligence routing */
+.brief-routing{display:flex;flex-wrap:wrap;gap:.45rem;margin-top:.65rem}.brief-routing span{font-size:.72rem;letter-spacing:.04em;text-transform:uppercase;border:1px solid rgba(127,127,127,.25);border-radius:999px;padding:.3rem .55rem;color:var(--muted,#777)}
+
+.finance-note p{margin:0;color:var(--muted);font-size:.92rem;line-height:1.55}
