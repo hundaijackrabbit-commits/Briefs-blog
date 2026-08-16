@@ -1,13 +1,9 @@
 {
-  "name": "briefs-blog-v3-knowledge",
-  "version": "0.3.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "typecheck": "tsc --noEmit",
-    "check": "npm run typecheck"
   },
   "dependencies": {
     "next": "16.2.2",
