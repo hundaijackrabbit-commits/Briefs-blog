@@ -8,10 +8,10 @@ type BriefResponse={
   plan:{researchNeeded:boolean;missingEvidence:string[];resolvedEntityIds:string[]};
   result:{
     subject:string;summary:string;whyItMatters:string;confidence:"high"|"medium"|"low";
-    generatedAt:string;knowledgeCutoff:string;researchNeeded:boolean;sourceMode:"database"|"starter"|"empty";
+    generatedAt:string;knowledgeCutoff:string;researchNeeded:boolean;sourceMode:"database"|"starter"|"research"|"empty";
     keyChanges:Array<{summary:string;changedAt:string;importance:number}>;
     keyNumbers:Array<{label:string;value:string;claimId:string}>;
-    keyFacts:Array<{label:string;value:string;text:string;claimId:string}>;
+    keyFacts:Array<{label:string;value:string;text:string;claimId:string;sourceIds:string[]}>;
     watchItems:string[];
     sources:Array<{id:string;name:string;url:string;tier:"A"|"B"|"C"|"D";kind:string}>;
   };
@@ -61,14 +61,14 @@ export default function BriefClient({initialSubject}:{initialSubject:string}){
     {loading&&<section className="brief-state" aria-live="polite"><div className="brief-pulse"/><p>Resolving entities, claims, evidence and freshness…</p></section>}
     {error&&<section className="brief-state brief-error" role="alert"><h2>Brief unavailable</h2><p>{error}</p><p className="muted">Briefs preserves the last safe public state when an intelligence dependency is unavailable.</p></section>}
     {data&&<article className="brief-result" aria-live="polite">
-      <header className="brief-result-head"><div><p className="eyebrow">{data.result.confidence.toUpperCase()} CONFIDENCE · {data.result.sourceMode==="database"?"LIVE KNOWLEDGE DB":data.result.sourceMode==="starter"?"VERIFIED STARTER CORPUS":"COVERAGE GAP"}</p><h2>{data.result.subject}</h2></div><span className={data.result.researchNeeded?"brief-status research":"brief-status current"}>{data.result.researchNeeded?"Research needed":data.result.sourceMode==="starter"?"Verified baseline":"Current"}</span></header>
+      <header className="brief-result-head"><div><p className="eyebrow">{data.result.confidence.toUpperCase()} CONFIDENCE · {data.result.sourceMode==="database"?"LIVE KNOWLEDGE DB":data.result.sourceMode==="starter"?"VERIFIED STARTER CORPUS":data.result.sourceMode==="research"?"LIVE RESEARCH":"COVERAGE GAP"}</p><h2>{data.result.subject}</h2></div><span className={data.result.researchNeeded?"brief-status research":"brief-status current"}>{data.result.sourceMode==="research"?(data.result.researchNeeded?"Researched · verify":"Researched"):data.result.researchNeeded?"Research needed":data.result.sourceMode==="starter"?"Verified baseline":"Current"}</span></header>
       <section className="brief-block lead"><h3>The brief</h3><p>{data.result.summary}</p></section>
       {data.result.whyItMatters&&<section className="brief-block"><h3>Why it matters</h3><p>{data.result.whyItMatters}</p></section>}
       {data.result.keyChanges.length>0&&<section className="brief-block"><h3>What changed</h3><div className="brief-list">{data.result.keyChanges.map((c,i)=><div key={i}><strong>{c.summary}</strong><span>{new Date(c.changedAt).toLocaleDateString()}</span></div>)}</div></section>}
-      {data.result.keyFacts.length>0&&<section className="brief-block"><h3>Key facts</h3><div className="brief-numbers">{data.result.keyFacts.map(n=><div key={n.claimId}><span>{n.label}</span><strong>{n.value}</strong></div>)}</div></section>}
+      {data.result.keyFacts.length>0&&<section className="brief-block"><h3>Key facts</h3><div className="brief-numbers">{data.result.keyFacts.map(n=><div key={n.claimId}><span>{n.label}</span><strong>{n.value}</strong>{n.sourceIds.length>0&&<small>{n.sourceIds.length} evidence source{n.sourceIds.length===1?"":"s"}</small>}</div>)}</div></section>}
       {data.result.watchItems.length>0&&<section className="brief-block"><h3>What to watch</h3><ul className="brief-watch">{data.result.watchItems.map((item,i)=><li key={i}>{item}</li>)}</ul></section>}
       {data.result.sources.length>0&&<section className="brief-block"><h3>Evidence</h3><div className="brief-sources">{data.result.sources.map(source=><a key={source.id} href={source.url} target="_blank" rel="noreferrer"><strong>{source.name}</strong><span>Tier {source.tier} · {source.kind}</span></a>)}</div></section>}
-      {data.result.researchNeeded&&<section className="brief-block research-note"><h3>Evidence gap</h3><p>{data.result.sourceMode==="empty"?"Briefs does not yet have a verified knowledge object for this subject. The gap has been identified for the research pipeline rather than filled by invention.":"This subject can change quickly. The current baseline is useful, but time-sensitive claims should be refreshed against live sources before being treated as fully current."}</p></section>}
+      {data.result.researchNeeded&&<section className="brief-block research-note"><h3>Evidence gap</h3><p>{data.result.sourceMode==="empty"?"Briefs could not gather enough evidence to answer safely. The gap remains explicit rather than being filled by invention.":data.result.sourceMode==="research"?"Briefs researched this subject live and found useful evidence, but independent corroboration or stronger primary sourcing is still limited. Treat this as a researched baseline, not final authority.":"This subject can change quickly. The current baseline is useful, but time-sensitive claims should be refreshed against live sources before being treated as fully current."}</p></section>}
       <footer className="brief-meta">Generated {new Date(data.result.generatedAt).toLocaleString()} · knowledge cutoff {new Date(data.result.knowledgeCutoff).toLocaleString()}</footer>
     </article>}
   </main>;

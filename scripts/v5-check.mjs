@@ -6,7 +6,7 @@ const required=[
 let failed=false;
 for(const file of required){if(!fs.existsSync(file)||fs.statSync(file).size<40){console.error("Missing/empty:",file);failed=true;}}
 const pkg=JSON.parse(fs.readFileSync("package.json","utf8"));
-if(pkg.version!=="0.5.0"){console.error("Expected package version 0.5.0");failed=true;}
+if(Number(pkg.version.split(".").slice(0,2).join("."))<0.5){console.error("Expected package version 0.5.0 or later");failed=true;}
 const api=fs.readFileSync("src/app/api/brief/route.ts","utf8");
 if(api.includes("DATABASE_NOT_CONFIGURED")){console.error("V5 Brief API must degrade to starter corpus instead of hard-failing without DB");failed=true;}
 const starter=fs.readFileSync("src/lib/knowledge/starter.ts","utf8");

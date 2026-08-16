@@ -69,7 +69,7 @@ export interface BriefResult {
   keyChanges:{summary:string;changedAt:string;importance:number}[];
   whyItMatters:string;
   keyNumbers:{label:string;value:string;claimId:string}[];
-  keyFacts:{label:string;value:string;text:string;claimId:string}[];
+  keyFacts:{label:string;value:string;text:string;claimId:string;sourceIds:string[]}[];
   watchItems:string[];
   claimIds:string[];
   evidenceIds:string[];
@@ -78,5 +78,5 @@ export interface BriefResult {
   generatedAt:string;
   knowledgeCutoff:string;
   researchNeeded:boolean;
-  sourceMode:"database"|"starter"|"empty";
+  sourceMode:"database"|"starter"|"research"|"empty";
 }

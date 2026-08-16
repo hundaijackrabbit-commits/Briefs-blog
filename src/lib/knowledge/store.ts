@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { resolveEntities } from "@/lib/engine/entity-resolution";
 import type { BriefRequest } from "@/lib/types";
 import { findStarterTopic } from "@/lib/knowledge/starter";
+import { researchSubject } from "@/lib/research/research-engine";
 
 export type KnowledgeClaim={
   id:string; predicate:string; valueText:string; text:string; confidence:"high"|"medium"|"low";
@@ -12,7 +13,7 @@ export type KnowledgeSource={id:string;name:string;url:string;tier:"A"|"B"|"C"|"
 export type KnowledgeBundle={
   subject:string; entityIds:string[]; description:string; whyItMatters:string; claims:KnowledgeClaim[];
   changes:KnowledgeChange[]; sources:KnowledgeSource[]; watchItems:string[]; knowledgeCutoff:string;
-  researchNeeded:boolean; missingEvidence:string[]; mode:"database"|"starter"|"empty"; dynamic:boolean;
+  researchNeeded:boolean; missingEvidence:string[]; mode:"database"|"starter"|"research"|"empty"; dynamic:boolean;
 };
 
 function depthLimit(depth:BriefRequest["depth"]){return depth==="flash"?2:depth==="quick"?4:depth==="standard"?8:20;}
@@ -57,14 +58,42 @@ function loadStarterKnowledge(request:BriefRequest):KnowledgeBundle{
   return {subject:topic.name,entityIds:[topic.id],description:summary,whyItMatters:topic.whyItMatters,claims:topic.facts.slice(0,limit).map(f=>({id:f.id,predicate:f.label,valueText:f.value,text:f.text,confidence:f.confidence,verificationStatus:"corroborated",lastVerifiedAt:topic.knowledgeCutoff,sourceIds:f.sourceIds})),changes:[],sources:topic.sources,watchItems:topic.watchItems,knowledgeCutoff:topic.knowledgeCutoff,researchNeeded:topic.dynamic,missingEvidence:topic.dynamic?["Live-source refresh recommended for time-sensitive claims"]:[],mode:"starter",dynamic:topic.dynamic};
 }
 
+function researchBundle(graph:Awaited<ReturnType<typeof researchSubject>>,request:BriefRequest):KnowledgeBundle{
+  const sourceIds=new Set(graph.sources.map(s=>s.id));
+  return {
+    subject:graph.canonicalSubject,
+    entityIds:[],
+    description:graph.description||`Briefs researched ${request.subject}, but the available evidence was too thin to summarize safely.`,
+    whyItMatters:"",
+    claims:graph.findings.map(f=>({id:f.id,predicate:f.predicate,valueText:f.valueText,text:f.statement,confidence:f.confidence,verificationStatus:f.verificationStatus,lastVerifiedAt:graph.knowledgeCutoff,sourceIds:f.sourceIds.filter(id=>sourceIds.has(id))})),
+    changes:[],
+    sources:graph.sources.map(s=>({id:s.id,name:`${s.name} — ${s.title}`,url:s.url,tier:s.tier,kind:s.kind})),
+    watchItems:[],
+    knowledgeCutoff:graph.knowledgeCutoff,
+    researchNeeded:!graph.sufficient||graph.missingEvidence.length>0,
+    missingEvidence:graph.missingEvidence,
+    mode:graph.sufficient?"research":"empty",
+    dynamic:graph.plan.freshness!=="historical"
+  };
+}
+
 export async function loadKnowledge(request:BriefRequest):Promise<KnowledgeBundle>{
   if(process.env.DATABASE_URL){
     try{
       const database=await loadDatabaseKnowledge(request);
-      if(database) return database;
+      if(database&&(!database.researchNeeded||database.claims.length>0)) return database;
     }catch(error){
       console.error("Briefs database knowledge fallback",error);
     }
   }
-  return loadStarterKnowledge(request);
+  const starter=loadStarterKnowledge(request);
+  const shouldResearch=starter.mode==="empty"||(starter.researchNeeded&&request.depth==="research");
+  if(!shouldResearch) return starter;
+  try{
+    const graph=await researchSubject(request);
+    if(graph.sufficient) return researchBundle(graph,request);
+  }catch(error){
+    console.error("Briefs V6 research fallback",error);
+  }
+  return starter;
 }

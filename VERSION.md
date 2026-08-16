@@ -1,19 +1,21 @@
-# Briefs.blog version 0.5.0
+# Briefs.blog version 0.6.0
 
-**Core release:** V5 — Living Knowledge MVP
+**Core release:** V6 — Research & Source Discovery Engine
 
-V5 turns the previously database-dependent Brief Me experience into a usable product surface. The production knowledge database remains the preferred source, but a small verified starter corpus provides safe degraded operation and demonstrates the complete retrieval → evidence → briefing path.
+V6 makes coverage gaps actionable. Unknown subjects now trigger bounded server-side research instead of immediately stopping at `Research needed`.
 
 Key additions:
-- database-first Knowledge Store with verified starter fallback
-- working WW2 starter Brief with evidence
-- starter AI baseline with live-research warning
-- evidence/source rendering in Brief Me
-- `research_requests` queue foundation
-- source packs and ingestion checkpoints
-- database bootstrap script
-- `/api/knowledge/status`
-- no hard `DATABASE_URL` requirement for normal Brief requests
-- fixed Postgres JSON typing in queue/source/understanding
+- generic Question Decomposition Engine
+- live keyless Wikipedia + Wikidata research providers
+- source ranking and source-family independence checks
+- hard provider time budgets and graceful fallback
+- temporary Research Graph with claim/evidence provenance
+- persisted research runs/evidence/staged findings when Postgres is connected
+- research context storage foundation
+- `LIVE RESEARCH` public source mode
+- evidence counts at the claim/fact level
+- broader entity taxonomy for works, events, places, franchises and fictional characters
+- `/api/research/status`
+- V6 architecture validator
 
-All V2 reliability, V3 knowledge/evidence/temporal, V4 editorial and V4.1 interactive Brief Me systems remain in scope.
+V6 preserves every tracked V1–V5 reliability, knowledge, editorial and Brief Me system. `SYSTEMS.md` is the non-negotiable scope ledger through V10.

@@ -7,8 +7,8 @@ This file is the non-negotiable scope ledger. No later release may silently dele
 - V2 — reliable intelligence pipeline — complete/foundation
 - V3 — knowledge intelligence — complete/foundation
 - V4 — autonomous editorial foundation — complete/foundation
-- V5 — living knowledge MVP — current
-- V6 — research & source-discovery engine — planned
+- V5 — living knowledge MVP — complete/foundation
+- V6 — research & source-discovery engine — current
 - V7 — daily change intelligence & continuous maintenance — planned
 - V8 — personal intelligence, accounts, packs & alerts — planned
 - V9 — authority/distribution: SEO, answer-engine visibility, feeds, audio, API — planned
@@ -80,25 +80,32 @@ Patch releases such as V4.1 do not consume a major-version slot.
 - Database-first Fast Path — V5 operational
 - Verified fallback path — V5 operational
 - Depth selector — operational foundation
-- Perspective selector — UI operational; semantic tailoring expands V6
+- Perspective selector — UI operational; semantic tailoring matures V7
 - Evidence list — V5 operational
-- Evidence drawer/claim-level inspection — V6 planned
+- Claim-level evidence counts — V6 operational foundation
+- Evidence drawer/claim-level inspection — V7 planned
 - Explicit knowledge cutoff — operational
 - Research-needed state — operational
 - Research request persistence — V5 foundation
-- Follow-up conversational context — V6 planned
-- Compare entities — V6/V7 planned
+- Follow-up conversational context storage — V6 foundation; product conversation loop V7
+- Compare/query decomposition — V6 foundation; full entity comparison surface V7
 - “What changed?” — V7 planned product surface
 - “Since I was here” — V8 planned
 - Read/listen/watch/export renderers — V9 planned
 
 ## Research & discovery
-- Question decomposition — V6
-- Targeted external research — V6
-- Source discovery/ranking — V6
-- Missing-evidence acquisition — V6
-- Research graph / staged findings — V6
-- Reviewed knowledge insertion — V6
+- Question decomposition — V6 operational foundation
+- Targeted external research orchestrator — V6 operational
+- Keyless Wikipedia provider — V6 operational
+- Keyless Wikidata structured provider — V6 operational
+- Provider time budgets / failure isolation — V6 operational
+- Source discovery/ranking — V6 operational foundation
+- Source-family independence detection — V6 operational foundation
+- Missing-evidence acquisition — V6 operational foundation
+- Temporary research graph / staged findings — V6 operational
+- Research-run/evidence/finding persistence — V6 operational when Postgres is configured
+- Reviewed knowledge insertion — V6 data foundation; admin promotion workflow matures V7
+- Research context storage — V6 foundation
 - Emerging-topic detection — V7
 - Velocity/trend engine — V7
 - Briefs Signals — V7/V9
