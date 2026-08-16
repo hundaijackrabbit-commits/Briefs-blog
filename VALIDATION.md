@@ -1,25 +1,14 @@
-# V4 Validation
+# V5 validation
 
-Validated in the build workspace:
+Validation performed for this package:
 
-- `package.json` parses successfully.
-- V4 import-resolution/system check: **PASS**.
-- static repository check: **PASS**.
-- stabilization check: **PASS**.
-- TypeScript parser reached the project without reporting project-code errors beyond missing external packages in this offline environment.
-- `npm install` was attempted but package download timed out in this environment, so a full Next.js production build could not be executed here.
+- `package.json` JSON parse — pass
+- V5 architecture check (`node scripts/v5-check.mjs`) — pass
+- legacy static repository check — pass
+- V4 stabilization check — pass
+- TypeScript project-code compile with dependency stubs — pass
+- known Postgres `sql.json` typing regressions repaired in queue/source/understanding
+- V5 database schema/seed packaged and bootstrap tool included
+- ZIP integrity — checked after packaging
 
-## Required desktop gate before push
-
-Run:
-
-```powershell
-npm install
-npm run typecheck
-npm run build
-npm run staticcheck
-npm run stabilize
-npm run v4check
-```
-
-Do not push to `main` if any command fails.
+A full `npm install && npm run typecheck && npm run build` could not be executed in the artifact environment because external package installation timed out. Run those commands on the Windows development machine before pushing to production. The same dependency versions already built successfully in V4.1 once the JSON typing regression was fixed locally.

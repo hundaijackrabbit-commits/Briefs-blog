@@ -2,7 +2,7 @@ export type Tier = "A"|"B"|"C"|"D";
 export type SourceType = "primary"|"reporting"|"specialist"|"discovery";
 export type Verification = "confirmed"|"corroborated"|"reported"|"estimated"|"disputed"|"unverified"|"retracted";
 export type ReviewMode = "auto"|"review"|"manual";
-export type JobType = "ingest"|"normalize"|"cluster"|"understand"|"resolve"|"extract"|"verify"|"compare"|"temporal"|"impact"|"review"|"publish"|"snapshot"|"quality"|"reconcile";
+export type JobType = "ingest"|"normalize"|"cluster"|"understand"|"resolve"|"extract"|"verify"|"compare"|"temporal"|"impact"|"review"|"publish"|"snapshot"|"quality"|"reconcile"|"research";
 export type BriefDepth = "flash"|"quick"|"standard"|"deep"|"research";
 export type BriefPerspective = "general"|"executive"|"investor"|"developer"|"student"|"marketer";
 export type EvidenceStance = "supports"|"conflicts"|"mentions";
@@ -61,17 +61,22 @@ export interface BriefPlan {
   perspective:BriefPerspective;
 }
 
+export interface BriefSource { id:string; name:string; url:string; tier:Tier; kind:string; }
+
 export interface BriefResult {
   subject:string;
   summary:string;
   keyChanges:{summary:string;changedAt:string;importance:number}[];
   whyItMatters:string;
   keyNumbers:{label:string;value:string;claimId:string}[];
+  keyFacts:{label:string;value:string;text:string;claimId:string}[];
   watchItems:string[];
   claimIds:string[];
   evidenceIds:string[];
+  sources:BriefSource[];
   confidence:"high"|"medium"|"low";
   generatedAt:string;
   knowledgeCutoff:string;
   researchNeeded:boolean;
+  sourceMode:"database"|"starter"|"empty";
 }

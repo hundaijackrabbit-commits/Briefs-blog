@@ -1,11 +1,26 @@
 # Briefs.blog
 
-**V4 — Autonomous Editorial Foundation**
+Briefs is a living knowledge and briefing platform. The public product is intentionally simple — **Brief me on …** — while the backend maintains entities, claims, evidence, changes, freshness, editorial revisions and research gaps.
 
-Briefs.blog is a living intelligence publication: a deliberately simple public interface backed by source ingestion, event/claim/evidence intelligence, historical state, reliability/recovery systems, and a controlled editorial-maintenance layer.
+## V5 quick start
 
-The homepage is intentionally minimal: **Brief me on …**
+```bash
+npm install
+npm run typecheck
+npm run v5check
+npm run build
+npm run dev
+```
 
-V4 adds section-level evidence-backed revision proposals, editorial policy, approvals, transactional publishing, snapshots, rollback/corrections, citation maintenance, freshness recalculation, and internal-link suggestions while preserving the V2 reliability and V3 knowledge layers.
+Without `DATABASE_URL`, Brief Me uses a small verified starter corpus and clearly marks coverage gaps. With Postgres configured, Briefs uses the database first.
 
-See `SYSTEMS.md` for the canonical long-term system inventory and `V4-BLUEPRINT.md` for the V4 publication flow.
+To bootstrap a new database:
+
+```bash
+# set DATABASE_URL in your shell first
+npm run db:bootstrap
+```
+
+Then configure the same `DATABASE_URL`, `CRON_SECRET` and `ADMIN_TOKEN` in Vercel.
+
+See `SYSTEMS.md` for the canonical architecture registry and `V5-BLUEPRINT.md` for this release.

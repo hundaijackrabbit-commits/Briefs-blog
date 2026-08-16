@@ -1,16 +1,18 @@
 {
   "name": "briefs-blog",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "check": "npm run typecheck && npm run staticcheck && npm run stabilize && npm run v4check",
+    "check": "npm run typecheck && npm run v5check",
     "staticcheck": "node scripts/run-check.mjs scripts/static-check.py",
     "stabilize": "node scripts/run-check.mjs scripts/stabilization-check.py",
-    "v4check": "node scripts/run-check.mjs scripts/v4-check.py"
+    "v4check": "node scripts/run-check.mjs scripts/v4-check.py",
+    "v5check": "node scripts/v5-check.mjs",
+    "db:bootstrap": "node scripts/db-bootstrap.mjs"
   },
   "dependencies": {
     "next": "16.2.2",
