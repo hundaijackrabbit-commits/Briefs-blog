@@ -1,4 +1,4 @@
-# Briefs.blog V4 — Autonomous Editorial Foundation
+# Briefs.blog V4.1 — Autonomous Editorial Foundation
 
 Version: **0.4.0**
 
@@ -23,3 +23,7 @@ V4 is a clean recovery-and-upgrade release. It preserves the V2 reliability laye
 - simple `Brief me on` public surface preserved
 
 See `SYSTEMS.md` for the complete product-system inventory so future versions do not silently drop planned engines.
+
+
+## V4.1 UX stabilization
+The Brief Me route is now an actual interactive briefing surface rather than a static explanatory landing page. See `V4.1.md`.

@@ -6,6 +6,7 @@ const depths=new Set<BriefDepth>(['flash','quick','standard','deep','research'])
 const perspectives=new Set<BriefPerspective>(['general','executive','investor','developer','student','marketer']);
 
 export async function POST(request:NextRequest){
+  if(!process.env.DATABASE_URL) return NextResponse.json({error:'Brief intelligence database is not configured',code:'DATABASE_NOT_CONFIGURED'},{status:503});
   const body=await request.json().catch(()=>null) as Partial<BriefRequestShape>|null;
   if(!body?.subject?.trim()) return NextResponse.json({error:'subject is required'},{status:400});
   const depth=depths.has(body.depth as BriefDepth)?body.depth as BriefDepth:'standard';

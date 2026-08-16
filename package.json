@@ -1,6 +1,6 @@
 {
   "name": "briefs-blog",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -8,9 +8,9 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "check": "npm run typecheck && npm run staticcheck && npm run stabilize && npm run v4check",
-    "staticcheck": "python3 scripts/static-check.py",
-    "stabilize": "python3 scripts/stabilization-check.py",
-    "v4check": "python3 scripts/v4-check.py"
+    "staticcheck": "node scripts/run-check.mjs scripts/static-check.py",
+    "stabilize": "node scripts/run-check.mjs scripts/stabilization-check.py",
+    "v4check": "node scripts/run-check.mjs scripts/v4-check.py"
   },
   "dependencies": {
     "next": "16.2.2",

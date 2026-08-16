@@ -3,7 +3,7 @@ import type { JobType } from "@/lib/types";
 import { stableKey } from "@/lib/reliability";
 export async function enqueue(runId:string,type:JobType,payload:Record<string,unknown>,keyParts:(string|number)[],maxAttempts=3){
   const sql=db(); const key=stableKey(runId,type,...keyParts);
-  await sql`insert into jobs(run_id,job_type,idempotency_key,payload,max_attempts) values(${runId}::uuid,${type},${key},${sql.json(JSON.parse(JSON.stringify(payload)))},${maxAttempts}) on conflict(idempotency_key) do nothing`;
+  await sql`insert into jobs(run_id,job_type,idempotency_key,payload,max_attempts) values(${runId}::uuid,${type},${key},${sql.json(payload)},${maxAttempts}) on conflict(idempotency_key) do nothing`;
 }
 export async function claim(worker:string,type?:JobType){
   const sql=db(); const rows=await sql`select * from briefs_claim_job(${worker},${type??null})`; return rows[0]??null;
