@@ -3,7 +3,7 @@ import re, sys, json
 root=Path(__file__).resolve().parents[1]
 errors=[]; warnings=[]
 required=[
- 'package.json','VERSION.md','STABILIZATION.md','db/schema.sql','db/v3_migration.sql','db/seed.sql',
+ 'package.json','VERSION.md','STABILIZATION.md','SYSTEMS.md','db/schema.sql','db/v3_migration.sql','db/v4_migration.sql','db/seed.sql',
  'src/app/page.tsx','src/app/api/brief/route.ts','src/app/api/cron/daily/route.ts','src/app/api/cron/worker/route.ts',
  'src/app/api/health/route.ts','src/lib/db.ts','src/lib/types.ts','src/lib/engine/daily.ts','src/lib/engine/worker.ts',
  'src/lib/engine/brief-object.ts','src/lib/engine/entity-resolution.ts','src/lib/engine/evidence-graph.ts','src/lib/engine/historical.ts'
@@ -22,7 +22,7 @@ for p in root.rglob('*'):
  if re.search(r'^(<<<<<<<|=======|>>>>>>>)',text,re.M): errors.append(f'merge conflict marker: {p.relative_to(root)}')
 
 # Lightweight SQL guardrails for common conflict corruption.
-for rel in ['db/schema.sql','db/v3_migration.sql']:
+for rel in ['db/schema.sql','db/v3_migration.sql','db/v4_migration.sql']:
  p=root/rel
  if not p.exists(): continue
  text=p.read_text()
@@ -57,14 +57,14 @@ for rel,needles in contracts.items():
 # Package sanity.
 try:
  pkg=json.loads((root/'package.json').read_text())
- if pkg.get('version')!='0.3.1': warnings.append('package version is not 0.3.1')
+ if pkg.get('version')!='0.4.0': warnings.append('package version is not 0.4.0')
 except Exception as e: errors.append(f'package.json invalid: {e}')
 
 if errors:
- print('V3 STABILIZATION CHECK: FAILED')
+ print('V4 STABILIZATION CHECK: FAILED')
  for e in errors: print(' -',e)
  if warnings:
   print('Warnings:'); [print(' -',w) for w in warnings]
  sys.exit(1)
-print('V3 STABILIZATION CHECK: OK')
+print('V4 STABILIZATION CHECK: OK')
 for w in warnings: print('warning:',w)

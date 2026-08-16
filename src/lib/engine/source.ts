@@ -24,7 +24,7 @@ export async function collectSource(source:SourceRecord):Promise<NormalizedDocum
 export async function persistDocuments(docs:NormalizedDocument[]){
   const sql=db(); let inserted=0;
   for(const d of docs){
-    const rows=await sql`insert into source_documents(source_id,external_key,canonical_url,title,excerpt,body,authors,language,published_at,retrieved_at,content_hash,metadata) values(${d.sourceId},${d.externalKey},${d.canonicalUrl},${d.title},${d.excerpt},${d.body},${d.authors},${d.language},${d.publishedAt},${d.retrievedAt},${d.contentHash},${sql.json(d.metadata)}) on conflict(source_id,content_hash) do nothing returning id`;
+    const rows=await sql`insert into source_documents(source_id,external_key,canonical_url,title,excerpt,body,authors,language,published_at,retrieved_at,content_hash,metadata) values(${d.sourceId},${d.externalKey},${d.canonicalUrl},${d.title},${d.excerpt},${d.body},${d.authors},${d.language},${d.publishedAt},${d.retrievedAt},${d.contentHash},${sql.json(JSON.parse(JSON.stringify(d.metadata)))}) on conflict(source_id,content_hash) do nothing returning id`;
     inserted+=rows.length;
   }
   return inserted;

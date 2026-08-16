@@ -1,29 +1,11 @@
-# Briefs.blog — V3 Stabilized
+# Briefs.blog
 
-Briefs is a living knowledge and current-intelligence platform designed around one deceptively simple request: **“Brief me on…”**
+**V4 — Autonomous Editorial Foundation**
 
-The public surface is intentionally minimal. Underneath it, V2/V3 establish source ingestion, durable jobs, event understanding, entity resolution, claims, evidence, freshness, temporal history, knowledge snapshots, change intelligence, quality gates, and the `BriefRequest → BriefPlan → BriefResult` contract.
+Briefs.blog is a living intelligence publication: a deliberately simple public interface backed by source ingestion, event/claim/evidence intelligence, historical state, reliability/recovery systems, and a controlled editorial-maintenance layer.
 
-## Local validation
+The homepage is intentionally minimal: **Brief me on …**
 
-```bash
-npm install
-npm run typecheck
-npm run build
-npm run stabilize
-```
+V4 adds section-level evidence-backed revision proposals, editorial policy, approvals, transactional publishing, snapshots, rollback/corrections, citation maintenance, freshness recalculation, and internal-link suggestions while preserving the V2 reliability and V3 knowledge layers.
 
-`npm run stabilize` performs repository-level checks that do not require a running database. See `STABILIZATION.md` for the production gate.
-
-## Database paths
-
-- Fresh database: apply `db/schema.sql`, then `db/seed.sql`.
-- Existing confirmed V2 database: back up, apply `db/v3_migration.sql`, then update seed data as needed.
-
-## Runtime configuration
-
-Copy `.env.example` and configure at minimum `DATABASE_URL`, `CRON_SECRET`, `ADMIN_TOKEN`, and `BRIEFS_BASE_URL` for a database-backed deployment.
-
-## Safety model
-
-Briefs fails closed. Missing or weak evidence is allowed to produce **research needed**; it must not silently become a factual publication. AI availability and knowledge-pipeline availability must never determine whether the public website itself can render.
+See `SYSTEMS.md` for the canonical long-term system inventory and `V4-BLUEPRINT.md` for the V4 publication flow.

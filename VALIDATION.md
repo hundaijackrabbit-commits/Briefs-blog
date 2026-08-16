@@ -1,26 +1,25 @@
-# Validation Record — V3 Stabilized
+# V4 Validation
 
-## Completed in the build environment
+Validated in the build workspace:
 
-- `python3 scripts/static-check.py` — **PASS**
-- `python3 scripts/stabilization-check.py` — **PASS**
-- ZIP integrity test — performed when packaging
-- Required local import resolution — included in stabilization check
-- Merge-marker scan — included in stabilization check
-- Critical zero-byte file scan — included in stabilization check
-- Lightweight SQL corruption scan — included in stabilization check
+- `package.json` parses successfully.
+- V4 import-resolution/system check: **PASS**.
+- static repository check: **PASS**.
+- stabilization check: **PASS**.
+- TypeScript parser reached the project without reporting project-code errors beyond missing external packages in this offline environment.
+- `npm install` was attempted but package download timed out in this environment, so a full Next.js production build could not be executed here.
 
-## Dependency-limited checks
+## Required desktop gate before push
 
-`npm install --ignore-scripts` was attempted in the build environment but external package retrieval timed out. Therefore a meaningful Next.js/React TypeScript compile could not be completed there. A subsequent `npm run typecheck` correctly failed because `next`, `react`, `postgres`, and their type packages were not installed; those errors do **not** constitute an application compile result.
-
-Run the following on the Windows development machine after extracting the project:
+Run:
 
 ```powershell
 npm install
 npm run typecheck
 npm run build
+npm run staticcheck
 npm run stabilize
+npm run v4check
 ```
 
-Do not promote V4 editorial automation to production until those commands pass on the dependency-complete project.
+Do not push to `main` if any command fails.
