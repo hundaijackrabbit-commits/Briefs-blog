@@ -26,6 +26,9 @@ const CATEGORY_QUERIES:Array<{category:GlobalCategory;query:string}>=[
 
 const STOP=new Set("the a an and or but for with from into over after before amid as at by to of in on is are was were be been being it its this that these those new latest update says say said report reports world global today yesterday tomorrow live more most less than about amid could would should will may might has have had not no yes their his her our your who what why how when where which one two three first last major key top".split(" "));
 const GENERIC=new Set("news breaking update updates report reports says said latest world global live today analysis exclusive video watch".split(" "));
+const CLUSTER_SIMILARITY_THRESHOLD=.40;
+const CLUSTER_SOFT_THRESHOLD=.31;
+const DISCOVERY_CONCURRENCY=5;
 
 const REGION_TERMS:Record<GlobalRegion,string[]>={
   "North America":["united states","u.s.","us ","america","canada","mexico","washington","ottawa"],
@@ -44,11 +47,13 @@ function iso(value?:string){if(!value)return null;const m=value.match(/^(\d{4})(
 function cleanTitle(value:string){return value.replace(/\s+[|–—-]\s+[^|–—-]{2,45}$/," ").replace(/\s+/g," ").trim();}
 function tokens(value:string){return cleanTitle(value).toLowerCase().replace(/[^a-z0-9\s]/g," ").split(/\s+/).filter(t=>t.length>2&&!STOP.has(t)&&!GENERIC.has(t));}
 function tokenSet(value:string){return new Set(tokens(value));}
+function sharedTokens(a:string,b:string){const A=tokenSet(a),B=tokenSet(b);let common=0;for(const word of A)if(B.has(word))common++;return common;}
 function similarity(a:string,b:string){const A=tokenSet(a),B=tokenSet(b);if(!A.size||!B.size)return 0;let common=0;for(const word of A)if(B.has(word))common++;return common/Math.max(1,Math.min(A.size,B.size));}
 function regionHints(title:string,country:string|null){const hay=` ${title.toLowerCase()} ${(country||"").toLowerCase()} `;const out:GlobalRegion[]=[];for(const [region,terms] of Object.entries(REGION_TERMS) as Array<[GlobalRegion,string[]]>){if(terms.some(term=>hay.includes(term)))out.push(region);}return out.length?out:(["Global"] as GlobalRegion[]);}
 function phraseCandidates(title:string){const raw=cleanTitle(title).toLowerCase().replace(/[^a-z0-9\s]/g," ").split(/\s+/).filter(Boolean);const useful=raw.map((word,index)=>({word,index})).filter(x=>x.word.length>2&&!STOP.has(x.word)&&!GENERIC.has(x.word));const out:string[]=[];for(let n=4;n>=2;n--){for(let i=0;i<=raw.length-n;i++){const slice=raw.slice(i,i+n);if(slice.filter(w=>!STOP.has(w)&&!GENERIC.has(w)&&w.length>2).length>=Math.max(2,n-1))out.push(slice.join(" "));}}for(const item of useful)out.push(item.word);return out;}
 function bestResearchPhrase(titles:string[]){const counts=new Map<string,number>();for(const title of titles){for(const phrase of new Set(phraseCandidates(title)))counts.set(phrase,(counts.get(phrase)||0)+1);}const ranked=[...counts.entries()].sort((a,b)=>b[1]-a[1]||b[0].split(" ").length-a[0].split(" ").length||b[0].length-a[0].length);const repeated=ranked.find(([phrase,count])=>count>=2&&phrase.split(" ").length>=2);if(repeated)return repeated[0];const top=tokens(titles[0]||"").slice(0,5).join(" ");return top||cleanTitle(titles[0]||"").slice(0,100);}
 function eventSignature(titles:string[]){const frequency=new Map<string,number>();for(const title of titles){for(const token of new Set(tokens(title)))frequency.set(token,(frequency.get(token)||0)+1);}const sig=[...frequency.entries()].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0])).slice(0,6).map(([word])=>word).sort().join("|");return sig||titles[0]||"world-event";}
+function sleep(ms:number){return new Promise(resolve=>setTimeout(resolve,ms));}
 
 async function queryCategory(category:GlobalCategory,query:string):Promise<GlobalArticleSeed[]>{
   const url=`https://api.gdeltproject.org/api/v2/doc/doc?query=${encodeURIComponent(query)}&mode=artlist&maxrecords=45&format=json&sort=datedesc&timespan=1d`;
@@ -58,16 +63,45 @@ async function queryCategory(category:GlobalCategory,query:string):Promise<Globa
   return out;
 }
 
+async function queryCategoryWithRetry(category:GlobalCategory,query:string):Promise<GlobalArticleSeed[]>{
+  try{return await queryCategory(category,query);}catch(firstError){
+    await sleep(650);
+    try{return await queryCategory(category,query);}catch(secondError){
+      const first=firstError instanceof Error?firstError.message:String(firstError);
+      const second=secondError instanceof Error?secondError.message:String(secondError);
+      throw new Error(`${category} discovery failed after retry: ${second}${second===first?"":` (first: ${first})`}`);
+    }
+  }
+}
+
+function shouldMerge(seed:GlobalArticleSeed,existing:GlobalArticleSeed){
+  const sim=similarity(seed.title,existing.title);
+  if(sim>=CLUSTER_SIMILARITY_THRESHOLD)return true;
+  return seed.category===existing.category&&sim>=CLUSTER_SOFT_THRESHOLD&&sharedTokens(seed.title,existing.title)>=2;
+}
+
 function clusterSeeds(seeds:GlobalArticleSeed[]):GlobalEventCandidate[]{
   const clusters:Array<{seeds:GlobalArticleSeed[];category:GlobalCategory}>=[];
   const ordered=[...seeds].sort((a,b)=>Date.parse(b.publishedAt||"")-Date.parse(a.publishedAt||""));
-  for(const seed of ordered){let best=-1,bestSim=0;for(let i=0;i<clusters.length;i++){const sim=Math.max(...clusters[i].seeds.slice(0,4).map(existing=>similarity(seed.title,existing.title)));if(sim>bestSim){bestSim=sim;best=i;}}if(best>=0&&bestSim>=0.48)clusters[best].seeds.push(seed);else clusters.push({seeds:[seed],category:seed.category});}
-  return clusters.map(cluster=>{const titles=[...new Set(cluster.seeds.map(s=>s.title))];const urls=[...new Set(cluster.seeds.map(s=>s.url))];const domains=[...new Set(cluster.seeds.map(s=>s.domain))];const countries=[...new Set(cluster.seeds.map(s=>s.sourceCountry).filter((v):v is string=>Boolean(v)))];const regions:GlobalRegion[]=[...new Set<GlobalRegion>(cluster.seeds.flatMap(s=>s.regionHints))];const categoryCounts=new Map<GlobalCategory,number>();for(const seed of cluster.seeds)categoryCounts.set(seed.category,(categoryCounts.get(seed.category)||0)+1);const category=[...categoryCounts.entries()].sort((a,b)=>b[1]-a[1])[0]?.[0]||cluster.category;const newest=cluster.seeds.map(s=>s.publishedAt).filter((v):v is string=>Boolean(v)).sort().at(-1)||null;const researchQuery=bestResearchPhrase(titles);return {eventKey:stableResearchId("world",eventSignature(titles)),subject:titles[0],researchQuery,category,titles:titles.slice(0,12),urls:urls.slice(0,30),domains:domains.slice(0,30),sourceCountries:countries.slice(0,30),regions:regions.length?regions:(["Global"] as GlobalRegion[]),mentionCount:urls.length,newestAt:newest};}).filter(c=>c.mentionCount>=2||c.domains.length>=2).sort((a,b)=>b.domains.length-a.domains.length||b.mentionCount-a.mentionCount).slice(0,80);
+  for(const seed of ordered){let best=-1,bestSim=0;for(let i=0;i<clusters.length;i++){for(const existing of clusters[i].seeds.slice(0,6)){if(!shouldMerge(seed,existing))continue;const sim=similarity(seed.title,existing.title);if(sim>bestSim){bestSim=sim;best=i;}}}if(best>=0)clusters[best].seeds.push(seed);else clusters.push({seeds:[seed],category:seed.category});}
+  return clusters.map(cluster=>{const titles=[...new Set(cluster.seeds.map(s=>s.title))];const urls=[...new Set(cluster.seeds.map(s=>s.url))];const domains=[...new Set(cluster.seeds.map(s=>s.domain))];const countries=[...new Set(cluster.seeds.map(s=>s.sourceCountry).filter((v):v is string=>Boolean(v)))];const regions:GlobalRegion[]=[...new Set<GlobalRegion>(cluster.seeds.flatMap(s=>s.regionHints))];const categoryCounts=new Map<GlobalCategory,number>();for(const seed of cluster.seeds)categoryCounts.set(seed.category,(categoryCounts.get(seed.category)||0)+1);const category=[...categoryCounts.entries()].sort((a,b)=>b[1]-a[1])[0]?.[0]||cluster.category;const newest=cluster.seeds.map(s=>s.publishedAt).filter((v):v is string=>Boolean(v)).sort().at(-1)||null;const researchQuery=bestResearchPhrase(titles);return {eventKey:stableResearchId("world",eventSignature(titles)),subject:titles[0],researchQuery,category,titles:titles.slice(0,12),urls:urls.slice(0,30),domains:domains.slice(0,30),sourceCountries:countries.slice(0,30),regions:regions.length?regions:(["Global"] as GlobalRegion[]),mentionCount:urls.length,newestAt:newest};}).sort((a,b)=>b.domains.length-a.domains.length||b.mentionCount-a.mentionCount).slice(0,120);
 }
 
 export async function discoverGlobalEvents():Promise<GlobalEventCandidate[]>{
-  const settled=await Promise.allSettled(CATEGORY_QUERIES.map(item=>queryCategory(item.category,item.query)));
-  const seeds=settled.flatMap(result=>result.status==="fulfilled"?result.value:[]);
+  const successes:GlobalArticleSeed[][]=[];
+  const failures:string[]=[];
+  for(let i=0;i<CATEGORY_QUERIES.length;i+=DISCOVERY_CONCURRENCY){
+    const batch=CATEGORY_QUERIES.slice(i,i+DISCOVERY_CONCURRENCY);
+    const settled=await Promise.allSettled(batch.map(item=>queryCategoryWithRetry(item.category,item.query)));
+    settled.forEach((result,index)=>{
+      if(result.status==="fulfilled")successes.push(result.value);
+      else failures.push(`${batch[index].category}: ${result.reason instanceof Error?result.reason.message:String(result.reason)}`);
+    });
+  }
+  const seeds=successes.flat();
   const unique=new Map<string,GlobalArticleSeed>();for(const seed of seeds)if(!unique.has(seed.url))unique.set(seed.url,seed);
-  return clusterSeeds([...unique.values()]);
+  const candidates=clusterSeeds([...unique.values()]);
+  console.info(`[global-discovery] queries=${CATEGORY_QUERIES.length} succeeded=${successes.length} failed=${failures.length} seeds=${seeds.length} unique=${unique.size} candidates=${candidates.length}`);
+  if(failures.length)console.warn(`[global-discovery] failed queries: ${failures.slice(0,5).join(" | ")}${failures.length>5?` | +${failures.length-5} more`:""}`);
+  return candidates;
 }
