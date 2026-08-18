@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import type { ArticleDraft, EditorialMode, PublicationAudience, PublicationQualityReport } from "@/lib/publication/types";
+import type { ArticleDraft, EditorialMode, PublicationAudience, PublicationQualityReport, StoryAngle, StoryContract } from "@/lib/publication/types";
 import type { ResearchGraph } from "@/lib/research/types";
 
 function json(value: unknown) {
@@ -62,6 +62,17 @@ export async function createOpportunity(args: {
   return String(rows[0].id);
 }
 
+
+export async function persistAngleCandidates(args:{opportunityId:string;keywordId:string;snapshotId:string;angles:StoryAngle[]}){
+  const sql=db();
+  await sql`delete from publication_angle_candidates where opportunity_id=${args.opportunityId}::uuid`;
+  for(let i=0;i<args.angles.length;i++){const angle=args.angles[i];await sql`insert into publication_angle_candidates(opportunity_id,keyword_id,research_snapshot_id,angle_key,title,thesis,score,evidence_score,novelty_score,audience_score,risk_score,claim_ids,selected,rationale) values(${args.opportunityId}::uuid,${args.keywordId}::uuid,${args.snapshotId}::uuid,${angle.key},${angle.title},${angle.thesis},${angle.score},${angle.evidenceScore},${angle.noveltyScore},${angle.audienceScore},${angle.riskScore},${sql.json(json(angle.claimIds))},${i===0},${sql.json(json(angle.rationale))})`;}
+}
+
+export async function persistStoryContract(opportunityId:string,contract:StoryContract){
+  const sql=db();
+  await sql`insert into publication_story_contracts(opportunity_id,audience_key,angle_key,angle,thesis,why_now,reader_outcome,differentiator,strongest_claim_ids,counter_claim_ids,cannot_claim) values(${opportunityId}::uuid,${contract.audience},${contract.angleKey},${contract.angle},${contract.thesis},${contract.whyNow},${contract.readerOutcome},${contract.differentiator},${sql.json(json(contract.strongestClaimIds))},${sql.json(json(contract.counterClaimIds))},${sql.json(json(contract.cannotClaim))}) on conflict(opportunity_id) do update set audience_key=excluded.audience_key,angle_key=excluded.angle_key,angle=excluded.angle,thesis=excluded.thesis,why_now=excluded.why_now,reader_outcome=excluded.reader_outcome,differentiator=excluded.differentiator,strongest_claim_ids=excluded.strongest_claim_ids,counter_claim_ids=excluded.counter_claim_ids,cannot_claim=excluded.cannot_claim,updated_at=now()`;
+}
 export async function saveArticle(args: {
   opportunityId: string;
   keyword: string;

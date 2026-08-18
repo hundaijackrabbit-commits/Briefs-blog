@@ -3,6 +3,11 @@ import type { BriefPlan,BriefRequest,BriefResult } from "@/lib/types";
 import { classifyQuery } from "@/lib/intelligence/query-intent";
 import { persistQueryIntent } from "@/lib/intelligence/persistence";
 import { contextualizeRequest,nextBriefContext } from "@/lib/intelligence/brief-context";
+import { inferReaderModel } from "@/lib/reader/model";
+import { buildAnswerPlan } from "@/lib/reader/plan";
+import { composeReaderAnswer } from "@/lib/reader/composer";
+import { evaluateAnswerQuality } from "@/lib/reader/quality";
+import { persistAnswerEvaluation } from "@/lib/reader/telemetry";
 
 function confidenceFromClaims(claims:{confidence:string;verificationStatus:string}[]):"high"|"medium"|"low"{
   if(!claims.length)return "low";const strong=claims.filter(c=>c.confidence==="high"&&["confirmed","corroborated"].includes(c.verificationStatus)).length/claims.length;const usable=claims.filter(c=>["high","medium"].includes(c.confidence)&&!["unverified","retracted"].includes(c.verificationStatus)).length/claims.length;return strong>.7?"high":usable>.55?"medium":"low";
@@ -23,35 +28,27 @@ function qualityScore(input:{claims:number;sourced:number;sources:number;cutoff:
   return {score,evidence,freshness,coverage,warnings};
 }
 
-function shapeForReader(text:string,perspective:BriefRequest["perspective"]){
-  const clean=text.replace(/\s+/g," ").trim();
-  if(!clean||perspective==="general")return clean;
-  if(perspective==="investor")return `For an investor, the key point is this: ${clean}`;
-  if(perspective==="executive")return `For an executive, the decision-relevant point is this: ${clean}`;
-  if(perspective==="developer")return `For a developer, the practical point is this: ${clean}`;
-  if(perspective==="student")return `The simplest useful way to understand this is: ${clean}`;
-  if(perspective==="marketer")return `For a marketer, the audience and market implication starts here: ${clean}`;
-  return clean;
-}
-
 export async function composeBrief(request:BriefRequest):Promise<{plan:BriefPlan;result:BriefResult}>{
   const contextual=contextualizeRequest(request);const intent=classifyQuery(contextual);void persistQueryIntent(intent,contextual);
-  const knowledge=await loadKnowledge({...contextual,perspective:intent.effectivePerspective});
-  const plan:BriefPlan={subject:request.subject,resolvedEntityIds:knowledge.entityIds,requiredClaimIds:knowledge.claims.map(c=>c.id),recentChangeIds:knowledge.changes.map(c=>c.id),missingEvidence:knowledge.missingEvidence,researchNeeded:knowledge.researchNeeded,depth:request.depth,perspective:intent.effectivePerspective};
+  const reader=inferReaderModel(contextual,intent);
+  const knowledge=await loadKnowledge({...contextual,perspective:reader.audience});
+  const plan:BriefPlan={subject:request.subject,resolvedEntityIds:knowledge.entityIds,requiredClaimIds:knowledge.claims.map(c=>c.id),recentChangeIds:knowledge.changes.map(c=>c.id),missingEvidence:knowledge.missingEvidence,researchNeeded:knowledge.researchNeeded,depth:request.depth,perspective:reader.audience};
   const keyNumbers=knowledge.claims.filter(c=>/\d/.test(c.valueText)).slice(0,6).map(c=>({label:c.predicate,value:c.valueText,claimId:c.id}));
   const factLimit=request.depth==="flash"?2:request.depth==="quick"?4:request.depth==="standard"?8:14;
   const keyFacts=knowledge.claims.slice(0,factLimit).map(c=>({label:c.predicate,value:c.valueText,text:c.text,claimId:c.id,sourceIds:c.sourceIds}));
   const sourceIds=new Set<string>();for(const claim of knowledge.claims)for(const id of claim.sourceIds)sourceIds.add(id);const sources=knowledge.sources.filter(s=>sourceIds.size===0||sourceIds.has(s.id));
   const contradictions=contradictionSummary(knowledge.claims);const sourced=knowledge.claims.filter(c=>c.sourceIds.length).length;
-  let summary=shapeForReader(knowledge.description,intent.effectivePerspective);
-  let why=knowledge.whyItMatters||(knowledge.changes.length?`There ${knowledge.changes.length===1?"is":"are"} ${knowledge.changes.length} recorded change${knowledge.changes.length===1?"":"s"} in the selected period.`:(request.timeRange||request.freshnessRequirement==="recent"?"No material change is recorded for the selected period.":""));
+
+  const answerPlan=buildAnswerPlan(contextual,intent,reader,knowledge);
+  let answer=await composeReaderAnswer(contextual,knowledge,answerPlan);
   if(intent.intent==="evidence"){
-    summary=sources.length?`Briefs currently supports ${knowledge.subject} with ${sources.length} eligible source${sources.length===1?"":"s"} tied to ${sourced} of ${knowledge.claims.length} retrieved claim${knowledge.claims.length===1?"":"s"}. Expand Key facts to inspect claim-level evidence, or open the Evidence section for the source set.`:`Briefs does not currently have inspectable source evidence for ${knowledge.subject}. It will not manufacture citations.`;
-    why="This answer reports the provenance already attached to the Brief instead of generating a new narrative and presenting it as evidence.";
+    answer={...answer,summary:sources.length?`Briefs currently supports ${knowledge.subject} with ${sources.length} eligible source${sources.length===1?"":"s"} tied to ${sourced} of ${knowledge.claims.length} retrieved claim${knowledge.claims.length===1?"":"s"}. Expand Key facts to inspect claim-level evidence, or open the Evidence section for the source set.`:`Briefs does not currently have inspectable source evidence for ${knowledge.subject}. It will not manufacture citations.`,whyItMatters:"This answer reports the provenance already attached to the Brief instead of generating a new narrative and presenting it as evidence."};
   }
-  if(contradictions.length){why=`${why?why+" ":""}Briefs detected ${contradictions.length} structured disagreement${contradictions.length===1?"":"s"}; conflicting values remain visible instead of being silently averaged away.`;}
+  if(contradictions.length){answer={...answer,whyItMatters:`${answer.whyItMatters?answer.whyItMatters+" ":""}Briefs detected ${contradictions.length} structured disagreement${contradictions.length===1?"":"s"}; conflicting values remain visible instead of being silently averaged away.`};}
+  const answerQuality=evaluateAnswerQuality(contextual,knowledge,answerPlan,answer);void persistAnswerEvaluation(knowledge.subject,intent.intent,knowledge.mode,answerPlan,answer,answerQuality);
+
   let confidence=confidenceFromClaims(knowledge.claims);if(knowledge.researchNeeded&&confidence==="high")confidence="medium";if(contradictions.length&&confidence==="high")confidence="medium";
   const quality=qualityScore({claims:knowledge.claims.length,sourced,sources:sources.length,cutoff:knowledge.knowledgeCutoff,live:intent.freshness==="live",researchNeeded:knowledge.researchNeeded,contradictions:contradictions.length,depth:request.depth});
-  const result:BriefResult={subject:knowledge.subject,summary,keyChanges:knowledge.changes.slice(0,7),whyItMatters:why,keyNumbers,keyFacts,watchItems:knowledge.watchItems,claimIds:knowledge.claims.map(c=>c.id),evidenceIds:sources.map(s=>s.id),sources,confidence,generatedAt:new Date().toISOString(),knowledgeCutoff:knowledge.knowledgeCutoff,researchNeeded:knowledge.researchNeeded,sourceMode:knowledge.mode,intent:intent.intent,lens:intent.effectivePerspective,freshnessStatus:intent.freshness,comparison:knowledge.comparison,quality,research:knowledge.researchMeta,contradictions};
+  const result:BriefResult={subject:knowledge.subject,summary:answer.summary,keyChanges:knowledge.changes.slice(0,7),whyItMatters:answer.whyItMatters,keyNumbers,keyFacts,watchItems:knowledge.watchItems,claimIds:knowledge.claims.map(c=>c.id),evidenceIds:sources.map(s=>s.id),sources,confidence,generatedAt:new Date().toISOString(),knowledgeCutoff:knowledge.knowledgeCutoff,researchNeeded:knowledge.researchNeeded,sourceMode:knowledge.mode,intent:intent.intent,lens:reader.audience,freshnessStatus:intent.freshness,comparison:knowledge.comparison,quality,answerQuality,reader:{audience:reader.audience,goal:reader.goal,expertise:reader.expertise,timeBudget:reader.timeBudget,desiredOutcome:reader.desiredOutcome,confidence:reader.confidence,inferred:reader.inferred},answerPlan:{objective:answerPlan.objective,opening:answerPlan.opening,targetWords:answerPlan.targetWords},suggestedFollowups:answer.suggestedFollowups,generatedBy:answer.generatedBy,research:knowledge.researchMeta,contradictions};
   result.context=nextBriefContext(request,result);return {plan,result};
 }

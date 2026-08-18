@@ -242,3 +242,23 @@ Patch releases and post-MVP product releases such as V4.1 and Publication Engine
 - Existing daily intelligence cron schedules publication work; bounded publication cron processes the queue in batches
 
 V10 closes the ten-version MVP roadmap. Future work is normal post-MVP iteration, commercial integrations, scale work, or product expansion rather than another promised architecture version.
+
+## V10.2 Reader Intelligence & Editorial Refinement — post-MVP
+- Reader Intelligence Engine — operational foundation; infers reader goal, expertise, time budget and audience without forcing a questionnaire
+- Answer Contract / Answer Planner — operational; defines objective, opening, evidence rules, uncertainty rules, required content and avoid-list before composition
+- Grounded Reader Composer — operational; deterministic fallback plus optional provider-neutral answer writer bound to retrieved claim IDs
+- Reader-aware fact selection — operational; changes information selection/order by investor, executive, developer, student, marketer and general-reader needs
+- Answer Quality Engine — operational; directness, audience fit, grounding, clarity, uncertainty and specificity are scored separately from evidence quality
+- Answer-quality telemetry — operational when Postgres is configured
+- Story Angle Intelligence — operational; produces and ranks multiple evidence-bounded angles before drafting
+- Publication Saturation Penalty — operational; reduces story score when recent Briefs already cover substantially similar territory
+- Story Contract — operational; locks thesis, why-now, reader outcome, differentiator, supporting claims, counter-claims and cannot-claim rules before prose generation
+- Audience Fit Grader 2 — operational; replaces the synthetic default audience score with semantic/heuristic fit scoring
+- Briefs Voice 2 — operational; checks stock phrasing, repetitive cadence, repeated paragraph starts, label-colon constructions and weak-verb density
+- Headline Evidence Gate — operational foundation
+- Specificity Gate — operational foundation
+- Factual-section grounding gate — operational; factual article sections require mapped research claim IDs
+- Reader-specific Brief UI metadata — operational foundation
+- Answer Quality Lab — operational foundation via V10.2 regression/evaluation harness
+- Provider-neutral structured answer and article writer contracts — operational interfaces; deterministic safe fallbacks remain available
+- V10.1 daily revalidation and update architecture remains preserved; V10.2 revisions preserve article meaning while improving reader/audience checks

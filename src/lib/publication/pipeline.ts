@@ -1,156 +1,39 @@
 import { db } from "@/lib/db";
-import type { EditorialMode, PublicationAudience } from "@/lib/publication/types";
+import type { EditorialMode,PublicationAudience,StoryAngle } from "@/lib/publication/types";
 import { researchForPublication } from "@/lib/publication/research";
 import { composePublicationArticle } from "@/lib/publication/writer";
 import { originalityReport } from "@/lib/publication/originality";
 import { evaluatePublicationQuality } from "@/lib/publication/quality";
-import { createOpportunity, persistResearchSnapshot, saveArticle } from "@/lib/publication/store";
+import { generateStoryAngles } from "@/lib/publication/angles";
+import { buildStoryContract } from "@/lib/publication/story-contract";
+import { createOpportunity,persistAngleCandidates,persistResearchSnapshot,persistStoryContract,saveArticle } from "@/lib/publication/store";
 
-function angleFor(subject: string, intent: string) {
-  if (intent === "current") return `What changed in ${subject} — and what matters now`;
-  if (intent === "finance") return `${subject}: the numbers that change the story`;
-  if (intent === "compare") return `${subject}: the difference that matters`;
-  return `${subject}: what is actually worth knowing`;
+function clamp(n:number){return Math.max(0,Math.min(100,Math.round(n)));}
+
+export async function researchKeyword(keywordId:string){
+  const sql=db();const row=(await sql`select id,keyword,category,audience_key,editorial_mode,min_sources,require_primary,freshness_hours,min_story_score from publication_keywords where id=${keywordId}::uuid and active=true`)[0] as any;if(!row)throw new Error("Publication keyword not found or inactive");
+  const audience=String(row.audience_key) as PublicationAudience;const researched=await researchForPublication(String(row.keyword),audience,Number(row.freshness_hours));const snapshotId=await persistResearchSnapshot({keywordId,graph:researched.graph,primarySourceCount:researched.primarySourceCount,independentFamilies:researched.independentFamilies});
+  const angles=await generateStoryAngles(researched.graph,audience,String(row.keyword));const best=angles[0];if(!best)throw new Error("Research did not produce a defensible editorial angle");const combinedStory=clamp(researched.opportunity.story*.58+best.score*.42);
+  const opportunityId=await createOpportunity({keywordId,subject:researched.graph.canonicalSubject,angle:best.title,story:combinedStory,evidence:Math.round((researched.opportunity.evidence+best.evidenceScore)/2),novelty:Math.round((researched.opportunity.novelty+best.noveltyScore)/2),audience:best.audienceScore,freshness:researched.opportunity.freshness,rationale:[...researched.opportunity.rationale,...best.rationale,`selected angle ${best.key}`],snapshotId});
+  await persistAngleCandidates({opportunityId,keywordId,snapshotId,angles});
+  await sql`update publication_keywords set last_researched_at=now(),next_research_at=now()+(${Number(row.freshness_hours)}||' hours')::interval,updated_at=now() where id=${keywordId}::uuid`;
+  if(String(row.editorial_mode)!=="manual"&&combinedStory>=Number(row.min_story_score)){const draft=await draftOpportunity(opportunityId);return {opportunityId,angles:angles.map(a=>({title:a.title,score:a.score})),...draft};}
+  return {opportunityId,status:"candidate",storyScore:combinedStory,angles:angles.map(a=>({title:a.title,score:a.score}))};
 }
 
-export async function researchKeyword(keywordId: string) {
-  const sql = db();
-  const row = (await sql`
-    select id,keyword,category,audience_key,editorial_mode,min_sources,require_primary,
-      freshness_hours,min_story_score
-    from publication_keywords where id=${keywordId}::uuid and active=true
-  `)[0] as any;
-  if (!row) throw new Error("Publication keyword not found or inactive");
-
-  const researched = await researchForPublication(
-    String(row.keyword),
-    String(row.audience_key),
-    Number(row.freshness_hours)
-  );
-  const snapshotId = await persistResearchSnapshot({
-    keywordId,
-    graph: researched.graph,
-    primarySourceCount: researched.primarySourceCount,
-    independentFamilies: researched.independentFamilies
-  });
-  const opportunityId = await createOpportunity({
-    keywordId,
-    subject: researched.graph.canonicalSubject,
-    angle: angleFor(researched.graph.canonicalSubject, researched.graph.plan.intent),
-    story: researched.opportunity.story,
-    evidence: researched.opportunity.evidence,
-    novelty: researched.opportunity.novelty,
-    audience: researched.opportunity.audience,
-    freshness: researched.opportunity.freshness,
-    rationale: researched.opportunity.rationale,
-    snapshotId
-  });
-  await sql`
-    update publication_keywords
-    set last_researched_at=now(),
-        next_research_at=now()+(${Number(row.freshness_hours)}||' hours')::interval,
-        updated_at=now()
-    where id=${keywordId}::uuid
-  `;
-
-  if (String(row.editorial_mode) !== "manual" && researched.opportunity.story >= Number(row.min_story_score)) {
-    const draft = await draftOpportunity(opportunityId);
-    return { opportunityId, ...draft };
-  }
-  return { opportunityId, status: "candidate", storyScore: researched.opportunity.story };
+export async function draftOpportunity(opportunityId:string){
+  const sql=db();const row=(await sql`select o.id,o.subject,o.story_score,o.research_snapshot_id,k.keyword,k.category,k.audience_key,k.editorial_mode,k.min_sources,k.require_primary,k.min_story_score,r.graph from publication_opportunities o join publication_keywords k on k.id=o.keyword_id join publication_research_snapshots r on r.id=o.research_snapshot_id where o.id=${opportunityId}::uuid`)[0] as any;if(!row)throw new Error("Publication opportunity not found");
+  const graph=row.graph as import("@/lib/research/types").ResearchGraph;const angleRow=(await sql`select angle_key,title,thesis,score,evidence_score,novelty_score,audience_score,risk_score,claim_ids,rationale from publication_angle_candidates where opportunity_id=${opportunityId}::uuid order by selected desc,score desc limit 1`)[0] as any;
+  const fallback:StoryAngle={key:"fallback",title:String(row.subject),thesis:`Explain what the evidence changes about ${String(row.subject)}.`,score:Number(row.story_score),evidenceScore:70,noveltyScore:70,audienceScore:75,riskScore:35,claimIds:graph.findings.slice(0,4).map(f=>f.id),rationale:["fallback angle"]};
+  const angle:StoryAngle=angleRow?{key:String(angleRow.angle_key),title:String(angleRow.title),thesis:String(angleRow.thesis),score:Number(angleRow.score),evidenceScore:Number(angleRow.evidence_score),noveltyScore:Number(angleRow.novelty_score),audienceScore:Number(angleRow.audience_score),riskScore:Number(angleRow.risk_score),claimIds:Array.isArray(angleRow.claim_ids)?angleRow.claim_ids.map(String):[],rationale:Array.isArray(angleRow.rationale)?angleRow.rationale.map(String):[]}:fallback;
+  const audience=String(row.audience_key) as PublicationAudience;const storyContract=buildStoryContract(graph,audience,angle);await persistStoryContract(opportunityId,storyContract);
+  const draft=await composePublicationArticle(graph,audience,String(row.category),storyContract);const sourceExcerpts=graph.sources.map(s=>s.excerpt||"").filter(Boolean);const originality=await originalityReport([draft.title,draft.deck,...draft.sections.map(s=>s.body)].join("\n\n"),sourceExcerpts);const primarySources=graph.sources.filter(s=>s.kind==="primary").length;const families=new Set(graph.sources.map(s=>s.independenceFamily||s.provider)).size;
+  const quality=evaluatePublicationQuality({draft,graph,originality,minSources:Number(row.min_sources),requirePrimary:Boolean(row.require_primary),minStoryScore:Number(row.min_story_score),storyScore:Number(row.story_score),independentFamilies:families,primarySources,storyContract});
+  await sql`insert into publication_similarity_checks(opportunity_id,max_source_overlap,max_library_overlap,longest_matching_words,passed,details) values(${opportunityId}::uuid,${originality.maxSourceOverlap},${originality.maxLibraryOverlap},${originality.longestMatchingWords},${originality.passed},${sql.json(JSON.parse(JSON.stringify({warnings:originality.warnings})))})`;
+  await sql`insert into publication_quality_results(opportunity_id,total_score,evidence_coverage,evidence_diversity,originality_score,audience_score,reader_goal_score,voice_score,freshness_score,headline_score,specificity_score,unsupported_facts,blockers,warnings,passed,voice_version) values(${opportunityId}::uuid,${quality.totalScore},${quality.evidenceCoverage},${quality.evidenceDiversity},${quality.originalityScore},${quality.audienceScore},${quality.readerGoalScore},${quality.voiceScore},${quality.freshnessScore},${quality.headlineScore},${quality.specificityScore},${quality.unsupportedFacts},${sql.json(JSON.parse(JSON.stringify(quality.blockers)))},${sql.json(JSON.parse(JSON.stringify(quality.warnings)))},${quality.passed},'2.0')`;
+  if(!quality.passed){await sql`update publication_opportunities set status='blocked',updated_at=now() where id=${opportunityId}::uuid`;return {status:"blocked",quality,storyContract};}
+  const highRisk=/^(markets|finance|policy|health|world|science)$/i.test(String(row.category));const autoPublish=String(row.editorial_mode)==="auto"&&!highRisk&&quality.totalScore>=93&&quality.audienceScore>=88&&quality.originalityScore>=90&&graph.confidence==="high";
+  const saved=await saveArticle({opportunityId,keyword:String(row.keyword),draft,graph,mode:String(row.editorial_mode) as EditorialMode,quality,primarySourceCount:primarySources,independentFamilies:families,autoPublish});return {status:saved.status,articleId:saved.articleId,slug:saved.slug,quality,storyContract};
 }
 
-export async function draftOpportunity(opportunityId: string) {
-  const sql = db();
-  const row = (await sql`
-    select o.id,o.subject,o.story_score,o.research_snapshot_id,
-      k.keyword,k.category,k.audience_key,k.editorial_mode,k.min_sources,k.require_primary,k.min_story_score,
-      r.graph
-    from publication_opportunities o
-    join publication_keywords k on k.id=o.keyword_id
-    join publication_research_snapshots r on r.id=o.research_snapshot_id
-    where o.id=${opportunityId}::uuid
-  `)[0] as any;
-  if (!row) throw new Error("Publication opportunity not found");
-
-  const graph = row.graph as import("@/lib/research/types").ResearchGraph;
-  const draft = await composePublicationArticle(
-    graph,
-    String(row.audience_key) as PublicationAudience,
-    String(row.category)
-  );
-  const sourceExcerpts = graph.sources.map(s => s.excerpt || "").filter(Boolean);
-  const originality = await originalityReport(
-    [draft.title, draft.deck, ...draft.sections.map(s => s.body)].join("\n\n"),
-    sourceExcerpts
-  );
-  const primarySources = graph.sources.filter(s => s.kind === "primary").length;
-  const families = new Set(graph.sources.map(s => s.independenceFamily || s.provider)).size;
-  const quality = evaluatePublicationQuality({
-    draft,
-    graph,
-    originality,
-    minSources: Number(row.min_sources),
-    requirePrimary: Boolean(row.require_primary),
-    minStoryScore: Number(row.min_story_score),
-    storyScore: Number(row.story_score),
-    independentFamilies: families,
-    primarySources
-  });
-
-  await sql`
-    insert into publication_similarity_checks(opportunity_id,max_source_overlap,max_library_overlap,longest_matching_words,passed,details)
-    values(
-      ${opportunityId}::uuid,${originality.maxSourceOverlap},${originality.maxLibraryOverlap},
-      ${originality.longestMatchingWords},${originality.passed},
-      ${sql.json(JSON.parse(JSON.stringify({warnings:originality.warnings})))}
-    )
-  `;
-  await sql`
-    insert into publication_quality_results(
-      opportunity_id,total_score,evidence_coverage,evidence_diversity,originality_score,
-      audience_score,voice_score,freshness_score,unsupported_facts,blockers,warnings,passed
-    )
-    values(
-      ${opportunityId}::uuid,${quality.totalScore},${quality.evidenceCoverage},${quality.evidenceDiversity},
-      ${quality.originalityScore},${quality.audienceScore},${quality.voiceScore},${quality.freshnessScore},
-      ${quality.unsupportedFacts},${sql.json(JSON.parse(JSON.stringify(quality.blockers)))},
-      ${sql.json(JSON.parse(JSON.stringify(quality.warnings)))},${quality.passed}
-    )
-  `;
-
-  if (!quality.passed) {
-    await sql`update publication_opportunities set status='blocked',updated_at=now() where id=${opportunityId}::uuid`;
-    return { status: "blocked", quality };
-  }
-
-  const highRisk = /^(markets|finance|policy|health|world|science)$/i.test(String(row.category));
-  const autoPublish = String(row.editorial_mode) === "auto" &&
-    !highRisk && quality.totalScore >= 92 && graph.confidence === "high";
-
-  const saved = await saveArticle({
-    opportunityId,
-    keyword: String(row.keyword),
-    draft,
-    graph,
-    mode: String(row.editorial_mode) as EditorialMode,
-    quality,
-    primarySourceCount: primarySources,
-    independentFamilies: families,
-    autoPublish
-  });
-  return { status: saved.status, articleId: saved.articleId, slug: saved.slug, quality };
-}
-
-export async function publishArticle(articleId: string) {
-  const sql = db();
-  const row = (await sql`
-    update publication_articles
-    set status='published',published_at=coalesce(published_at,now()),
-        last_substantial_update_at=coalesce(last_substantial_update_at,now()),updated_at=now()
-    where id=${articleId}::uuid and status in ('draft','review')
-    returning id,slug
-  `)[0];
-  if (!row) throw new Error("Article is not publishable");
-  return { id: String(row.id), slug: String(row.slug) };
-}
+export async function publishArticle(articleId:string){const sql=db();const row=(await sql`update publication_articles set status='published',published_at=coalesce(published_at,now()),last_substantial_update_at=coalesce(last_substantial_update_at,now()),updated_at=now() where id=${articleId}::uuid and status in ('draft','review') returning id,slug`)[0];if(!row)throw new Error("Article is not publishable");return {id:String(row.id),slug:String(row.slug)};}

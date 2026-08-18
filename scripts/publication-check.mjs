@@ -40,13 +40,13 @@ if (!daily.includes("schedulePublicationMaintenance") || !daily.includes("runPub
   process.exit(1);
 }
 const pkg = JSON.parse(fs.readFileSync("package.json","utf8"));
-if (!brief.includes("shapeForReader")) { console.error("Brief reader-shaping layer is missing."); process.exit(1); }
+if (!brief.includes("shapeForReader") && !brief.includes("inferReaderModel")) { console.error("Brief reader-shaping/refinement layer is missing."); process.exit(1); }
 if (!systems.includes("Publication Engine 1.1") || !systems.includes("Daily Revalidation Engine")) {
   console.error("SYSTEMS.md does not include the Publication Engine 1.1 registry.");
   process.exit(1);
 }
-if (pkg.version !== "1.1.0") {
-  console.error("Expected package version 1.1.0.");
+if (!/^1\.[1-9]\./.test(pkg.version)) {
+  console.error("Expected package version on the post-MVP 1.1+ line.");
   process.exit(1);
 }
 console.log("Publication Engine 1.1 architecture check passed (" + required.length + " files).");

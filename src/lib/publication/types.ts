@@ -22,6 +22,7 @@ export type ReaderContract = {
 
 export type VoiceContract = {
   key: "briefs";
+  version: string;
   description: string;
   bannedPhrases: string[];
   principles: string[];
@@ -32,6 +33,7 @@ export type ArticleSectionDraft = {
   heading: string;
   body: string;
   claimIds: string[];
+  purpose?:"answer"|"evidence"|"context"|"analysis"|"watch"|"method";
 };
 
 export type ArticleDraft = {
@@ -45,12 +47,40 @@ export type ArticleDraft = {
   generatedBy: "briefs-deterministic" | "configured-writer";
 };
 
+export type StoryAngle={
+  key:string;
+  title:string;
+  thesis:string;
+  score:number;
+  evidenceScore:number;
+  noveltyScore:number;
+  audienceScore:number;
+  riskScore:number;
+  claimIds:string[];
+  rationale:string[];
+};
+
+export type StoryContract={
+  angleKey:string;
+  angle:string;
+  thesis:string;
+  whyNow:string;
+  audience:PublicationAudience;
+  readerOutcome:string;
+  differentiator:string;
+  strongestClaimIds:string[];
+  counterClaimIds:string[];
+  cannotClaim:string[];
+};
+
 export type OpportunityScore = {
   story: number;
   evidence: number;
   novelty: number;
   audience: number;
   freshness: number;
+  significance:number;
+  saturationPenalty:number;
   rationale: string[];
 };
 
@@ -62,6 +92,15 @@ export type OriginalityReport = {
   warnings: string[];
 };
 
+export type AudienceFitReport={
+  score:number;
+  goalScore:number;
+  expertiseScore:number;
+  openingScore:number;
+  jargonScore:number;
+  warnings:string[];
+};
+
 export type PublicationQualityReport = {
   passed: boolean;
   totalScore: number;
@@ -69,8 +108,11 @@ export type PublicationQualityReport = {
   evidenceDiversity: number;
   originalityScore: number;
   audienceScore: number;
+  readerGoalScore:number;
   voiceScore: number;
   freshnessScore: number;
+  headlineScore:number;
+  specificityScore:number;
   unsupportedFacts: number;
   blockers: string[];
   warnings: string[];
@@ -81,4 +123,5 @@ export type PublicationResearch = {
   opportunity: OpportunityScore;
   primarySourceCount: number;
   independentFamilies: number;
+  saturationPenalty:number;
 };

@@ -99,6 +99,11 @@ export interface BriefResult {
   context?:BriefContextSnapshot;
   comparison?:{subject:string;summary:string;factCount:number;sourceCount:number}[];
   quality?:{score:number;evidence:number;freshness:number;coverage:number;warnings:string[]};
+  answerQuality?:{score:number;directness:number;audienceFit:number;grounding:number;clarity:number;uncertainty:number;specificity:number;warnings:string[]};
+  reader?:{audience:BriefPerspective;goal:string;expertise:string;timeBudget:string;desiredOutcome:string;confidence:number;inferred:boolean};
+  answerPlan?:{objective:string;opening:string;targetWords:number};
+  suggestedFollowups?:string[];
+  generatedBy?:string;
   research?:{iterations:number;stopReason?:string;persisted:boolean;independentSources:number};
   contradictions?:{predicate:string;values:string[];sourceIds:string[]}[];
 }

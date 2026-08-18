@@ -1,6 +1,8 @@
 import { db } from "@/lib/db";
 import { researchForPublication } from "@/lib/publication/research";
 import { composePublicationArticle } from "@/lib/publication/writer";
+import { buildStoryContract } from "@/lib/publication/story-contract";
+import type { StoryAngle } from "@/lib/publication/types";
 import { originalityReport } from "@/lib/publication/originality";
 import { evaluatePublicationQuality } from "@/lib/publication/quality";
 import type { PublicationAudience } from "@/lib/publication/types";
@@ -114,10 +116,17 @@ export async function revalidateArticle(articleId: string) {
     return { status: "revalidated", changes: 0 };
   }
 
+  const revalidationAngle:StoryAngle={
+    key:"revalidation",title:String(article.title),thesis:String(article.deck||`Update ${article.title} only where the evidence changed.`),
+    score:100,evidenceScore:100,noveltyScore:100,audienceScore:90,riskScore:20,
+    claimIds:graph.findings.slice(0,6).map(f=>f.id),rationale:["Preserve the published article's editorial meaning during revalidation"]
+  };
+  const storyContract=buildStoryContract(graph,String(article.audience_key) as PublicationAudience,revalidationAngle);
   const draft = await composePublicationArticle(
     graph,
     String(article.audience_key) as PublicationAudience,
-    String(article.category)
+    String(article.category),
+    storyContract
   );
   const affectedOldIds = new Set(changed.map(c => c.oldClaimId));
   const sections = await sql`
@@ -149,7 +158,8 @@ export async function revalidateArticle(articleId: string) {
     minStoryScore: 0,
     storyScore: 100,
     independentFamilies: researched.independentFamilies,
-    primarySources: researched.primarySourceCount
+    primarySources: researched.primarySourceCount,
+    storyContract
   });
 
   await sql`
@@ -165,12 +175,14 @@ export async function revalidateArticle(articleId: string) {
   await sql`
     insert into publication_quality_results(
       article_id,total_score,evidence_coverage,evidence_diversity,originality_score,
-      audience_score,voice_score,freshness_score,unsupported_facts,blockers,warnings,passed
+      audience_score,reader_goal_score,voice_score,freshness_score,headline_score,specificity_score,
+      unsupported_facts,blockers,warnings,passed,voice_version
     )
     values(
       ${articleId}::uuid,${quality.totalScore},${quality.evidenceCoverage},${quality.evidenceDiversity},
-      ${quality.originalityScore},${quality.audienceScore},${quality.voiceScore},${quality.freshnessScore},
-      ${quality.unsupportedFacts},${sql.json(json(quality.blockers))},${sql.json(json(quality.warnings))},${quality.passed}
+      ${quality.originalityScore},${quality.audienceScore},${quality.readerGoalScore},${quality.voiceScore},${quality.freshnessScore},
+      ${quality.headlineScore},${quality.specificityScore},${quality.unsupportedFacts},${sql.json(json(quality.blockers))},
+      ${sql.json(json(quality.warnings))},${quality.passed},'2.0'
     )
   `;
 

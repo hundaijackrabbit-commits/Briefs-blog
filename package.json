@@ -1,13 +1,13 @@
 {
   "name": "briefs-blog",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "check": "npm run typecheck && npm run v4check && npm run v5check && npm run v6check && npm run v7check && npm run intentcheck && npm run v8check && npm run v9check && npm run v10check && npm run publication:check",
+    "check": "npm run typecheck && npm run v4check && npm run v5check && npm run v6check && npm run v7check && npm run intentcheck && npm run v8check && npm run v9check && npm run v10check && npm run publication:check && npm run refinement:check",
     "staticcheck": "node scripts/run-check.mjs scripts/static-check.py",
     "stabilize": "node scripts/run-check.mjs scripts/stabilization-check.py",
     "v4check": "node scripts/run-check.mjs scripts/v4-check.py",
@@ -25,14 +25,17 @@
     "eval:v10": "node scripts/v10-eval.mjs",
     "db:doctor": "node scripts/db-doctor.mjs",
     "publication:check": "node scripts/publication-check.mjs",
-    "publication:db": "node scripts/publication-db.mjs"
+    "publication:db": "node scripts/publication-db.mjs",
+    "refinement:check": "node scripts/refinement-check.mjs",
+    "refinement:db": "node scripts/refinement-db.mjs",
+    "eval:v10.2": "node scripts/refinement-eval.mjs"
   },
   "dependencies": {
-    "@vercel/analytics": "^2.0.1",
     "next": "16.2.2",
     "postgres": "^3.4.7",
     "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "@vercel/analytics": "^2.0.1"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
