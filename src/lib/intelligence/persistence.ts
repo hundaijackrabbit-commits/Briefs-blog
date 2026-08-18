@@ -29,7 +29,7 @@ export async function persistChangeCandidates(subject:string,changes:Array<{id:s
   try{
     const sql=db();
     for(const change of changes){
-      await sql`insert into change_candidates(subject,change_type,summary,source_url,source_family,event_at,importance,fingerprint)
+      await sql`insert into observed_changes(subject,change_type,summary,source_url,source_family,event_at,importance,fingerprint)
         values(${subject},${change.changeType||"observed"},${change.summary},${change.sourceUrl??null},${change.sourceFamily??null},${change.changedAt},${change.importance},${change.id})
         on conflict(fingerprint) do nothing`;
     }

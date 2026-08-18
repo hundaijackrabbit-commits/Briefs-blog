@@ -17,6 +17,10 @@ export function nextBriefContext(request:BriefRequest,result:BriefResult):BriefC
     priorQueries:[...(previous?.priorQueries||[]),request.subject].slice(-8),
     entityHints:previous?.entityHints||[],
     claimIds:result.claimIds.slice(0,24),
-    sourceIds:result.evidenceIds.slice(0,24)
+    sourceIds:result.evidenceIds.slice(0,24),
+    sourceHints:result.sources.slice(0,16),
+    factHints:result.keyFacts.slice(0,12).map(f=>({id:f.claimId,predicate:f.label,value:f.value,text:f.text,sourceIds:f.sourceIds})),
+    lastSummary:result.summary.slice(0,2000),
+    knowledgeCutoff:result.knowledgeCutoff
   };
 }

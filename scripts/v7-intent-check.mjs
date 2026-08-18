@@ -16,7 +16,7 @@ const cases=[
   ["Why is Apple stock down today?","market_move","finance","Apple","investor"],
   ["AAPL earnings","financials","finance","AAPL","investor"],
   ["AAPL","market_snapshot","finance","AAPL","investor"],
-  ["latest Anthropic news","current_update","current","latest Anthropic news","general"],
+  ["latest Anthropic news","current_update","current","Anthropic","general"],
   ["Apple history","history","reference","Apple history","general"],
   ["Austin Powers","general","general","Austin Powers","general"]
 ];

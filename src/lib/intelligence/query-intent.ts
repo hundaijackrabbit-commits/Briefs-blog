@@ -1,7 +1,7 @@
 import type { BriefPerspective, BriefRequest } from "@/lib/types";
 
 export type QueryDomain="finance"|"current"|"reference"|"general";
-export type QueryIntent="market_snapshot"|"market_move"|"financials"|"company"|"current_update"|"compare"|"history"|"person"|"work"|"explain"|"general";
+export type QueryIntent="market_snapshot"|"market_move"|"financials"|"company"|"current_update"|"compare"|"history"|"person"|"work"|"explain"|"evidence"|"previous_state"|"general";
 
 export type QueryIntentResult={
   domain:QueryDomain;
@@ -32,6 +32,24 @@ function cleanEntityQuery(subject:string){
     .replace(/\s+/g," ").trim();
 }
 
+function cleanExplainEntityQuery(subject:string){
+  return subject
+    .replace(/^\s*explain\s+/i,"")
+    .replace(/^\s*what\s+(?:is|was|are|were)\s+/i,"")
+    .replace(/\s+\b(?:like|as)\s+(?:i(?:'|’)m\s+)?(?:a|an)\s+(?:executive|investor|developer|student|marketer)\b.*$/i,"")
+    .replace(/\b(?:in simple terms|simply|to me)\b/gi," ")
+    .replace(/[?!.,]+/g," ")
+    .replace(/\s+/g," ").trim();
+}
+
+function cleanCurrentEntityQuery(subject:string){
+  return subject
+    .replace(/\b(brief me on|what changed in|what changed with|what happened with|what is happening with|tell me about)\b/gi," ")
+    .replace(/\b(latest|current|today|now|recent|this week|this month|breaking|news|updates?|developments?)\b/gi," ")
+    .replace(/[?!.,]+/g," ")
+    .replace(/\s+/g," ").trim();
+}
+
 function tickerFrom(subject:string){
   const paren=subject.match(/\(([A-Z]{1,6})\)/); if(paren) return paren[1];
   const dollar=subject.match(/\$([A-Z]{1,6})\b/); if(dollar) return dollar[1];
@@ -44,20 +62,27 @@ function tickerFrom(subject:string){
 
 export function classifyQuery(request:BriefRequest):QueryIntentResult{
   const normalized=request.subject.replace(/\s+/g," ").trim().slice(0,200);
-  const tickerHint=tickerFrom(normalized);
-  const comparison=/\b(vs\.?|versus|compare)\b/i.test(normalized);
-  const finance=financeWords.test(normalized)||Boolean(tickerHint);
-  const market=marketWords.test(normalized)||Boolean(tickerHint&&bareTicker.test(normalized.trim()));
-  const movement=finance&&marketMoveWords.test(normalized);
-  const current=currentWords.test(normalized)||request.freshnessRequirement==="recent"||movement;
-  const history=/\b(history|historical|origin|timeline|war|ancient|century|founded|began)\b/i.test(normalized)||request.freshnessRequirement==="historical";
-  const work=/\b(movie|film|book|album|series|show|game|novel)\b/i.test(normalized);
-  const person=/^who (?:is|was)\b/i.test(normalized);
-  const explain=/^what (?:is|was|are|were)\b/i.test(normalized);
+  const follow=normalized.match(/^(.+?)\s+[—-]\s+follow-up:\s+(.+)$/i);
+  const rootSubject=follow?.[1]?.trim();
+  const question=(follow?.[2]||normalized).trim();
+  const tickerHint=tickerFrom(rootSubject||normalized);
+  const comparison=/\b(vs\.?|versus|compare)\b/i.test(question);
+  const finance=financeWords.test(rootSubject||normalized)||financeWords.test(question)||Boolean(tickerHint);
+  const market=marketWords.test(rootSubject||normalized)||marketWords.test(question)||Boolean(tickerHint&&bareTicker.test((rootSubject||normalized).trim()));
+  const movement=finance&&marketMoveWords.test(question);
+  const current=currentWords.test(question)||request.freshnessRequirement==="recent"||movement;
+  const previous=/\b(previously believe|previously believed|previously thought|used to believe|previous state|before this|what changed from before)\b/i.test(question);
+  const evidence=/\b(evidence|sources?|citations?|support(?:s|ed)? that|prove|provenance)\b/i.test(question);
+  const history=/\b(history|historical|origin|timeline|war|ancient|century|founded|began|ww2|wwii)\b/i.test(question)||request.freshnessRequirement==="historical";
+  const work=/\b(movie|film|book|album|series|show|game|novel)\b/i.test(question);
+  const person=/^who (?:is|was)\b/i.test(question);
+  const explain=/^(?:what (?:is|was|are|were)\b|explain\b)/i.test(question);
 
   let domain:QueryDomain="general";
   let intent:QueryIntent="general";
-  if(finance){domain="finance";intent=movement?"market_move":market?"market_snapshot":"financials";}
+  if(previous){domain="reference";intent="previous_state";}
+  else if(evidence){domain="reference";intent="evidence";}
+  else if(finance){domain="finance";intent=movement?"market_move":market?"market_snapshot":"financials";}
   else if(comparison){intent="compare";domain=current?"current":"general";}
   else if(current){domain="current";intent="current_update";}
   else if(history){domain="reference";intent="history";}
@@ -65,9 +90,10 @@ export function classifyQuery(request:BriefRequest):QueryIntentResult{
   else if(person){domain="reference";intent="person";}
   else if(explain){domain="reference";intent="explain";}
 
-  const entityQuery=finance?(cleanEntityQuery(normalized)||tickerHint||normalized):normalized;
-  const effectivePerspective:BriefPerspective=finance&&request.perspective==="general"?"investor":request.perspective;
-  const freshness=history?"historical":finance||current?"live":"current";
+  const entityQuery=rootSubject||(finance?(cleanEntityQuery(normalized)||tickerHint||normalized):current?(cleanCurrentEntityQuery(normalized)||normalized):explain?(cleanExplainEntityQuery(normalized)||normalized):normalized);
+  const perspectiveHint=question.match(/\b(?:like|as)\s+(?:i(?:'|’)m\s+)?(?:a|an)\s+(executive|investor|developer|student|marketer)\b/i)?.[1]?.toLowerCase() as BriefPerspective|undefined;
+  const effectivePerspective:BriefPerspective=request.perspective!=="general"?request.perspective:perspectiveHint||(finance?"investor":"general");
+  const freshness=previous||history?"historical":finance||current?"live":"current";
   const answerContract=finance?
     [
       "Answer the security/investor question before company history",
@@ -77,6 +103,10 @@ export function classifyQuery(request:BriefRequest):QueryIntentResult{
       "Separate reported facts from interpretation",
       "Surface catalysts, risks and missing market data"
     ]:
+    intent==="evidence"?
+    ["Answer with the evidence supporting the existing Brief","Expose source provenance and confidence","Do not replace missing evidence with new assertions"]:
+    intent==="previous_state"?
+    ["Reconstruct the most recent prior recorded knowledge state","Separate historical Briefs memory from current fact","Say clearly when no prior snapshot exists"]:
     current?
     ["Lead with what changed","Prefer recent reporting and primary sources","Include publication time/freshness","Do not substitute encyclopedia history for current events"]:
     ["Answer the user's phrasing directly","Use evidence-backed facts","Expose uncertainty and source provenance"];

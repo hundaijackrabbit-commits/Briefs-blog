@@ -27,7 +27,7 @@ export async function runPersonalDigest(){
     for(const item of items as any[]){
       const changes=await sql`
         select id,summary,importance,observed_at
-        from change_candidates
+        from observed_changes
         where lower(subject) like ${`%${String(item.subject).toLowerCase()}%`}
           and observed_at>${since}
           and importance>=${Number(reader.min_importance)}

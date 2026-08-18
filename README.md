@@ -1,10 +1,9 @@
-# Briefs.blog — V9
+# Briefs.blog
 
-Briefs is a living knowledge and briefing platform. The public product stays intentionally simple — **Brief me on …** — while the backend maintains entities, claims, evidence, research, changes, freshness, query intent, editorial state and personal context.
+Briefs is a living knowledge and briefing platform. The public product stays intentionally simple — **Brief me on …** — while the backend maintains intent, entities, claims, evidence, research, changes, freshness, personal state, editorial state and public authority surfaces.
 
-V9 adds the authority/distribution layer: canonical public Brief pages, structured data, claim-level public evidence, sitemap/robots, RSS, news sitemap, a public API, exports, listen mode and optional digest email delivery.
+## V10 — MVP complete
 
-## Validate
 ```bash
 npm install
 npm run typecheck
@@ -12,30 +11,26 @@ npm run check
 npm run build
 ```
 
-## Public surfaces
-- `/briefs`
-- `/methodology`
-- `/developers`
-- `/feed.xml`
-- `/news-sitemap.xml`
-- `/sitemap.xml`
-- `/llms.txt`
-- `/api/v1/brief?q=World%20War%20II`
-- `/api/export?q=World%20War%20II&format=markdown`
+Then configure production and verify the database:
 
-## Production database
 ```bash
 npm run db:bootstrap
+npm run db:doctor
 ```
-The app still degrades to verified starter knowledge and live research when Postgres is not configured. Database-backed published Briefs, cross-device personal intelligence, delivery logs and accumulated change state require `DATABASE_URL`.
 
-## Optional email
-Set `RESEND_API_KEY` and `BRIEFS_FROM_EMAIL`. Without them, digest notifications continue to exist inside My Briefs and the email step is skipped safely.
+V10 routes and researches questions differently based on what the user is asking. Evergreen/reference queries use the maintained knowledge store and general research path; current questions prioritize recent reporting; finance uses SEC primary evidence and an optional market-quote adapter; scholarly questions can use OpenAlex; comparisons, evidence follow-ups and recorded prior-state questions have dedicated handling.
 
-## Evaluation
+### Production configuration
+
+Required for the full persistent MVP: `DATABASE_URL`, `ADMIN_TOKEN`, `CRON_SECRET`, and `BRIEFS_BASE_URL`. The site can still answer from safe fallback/research paths when the database is unavailable, but accounts, persistent research memory, historical state, living change observations and cross-device personal intelligence require Postgres.
+
+Optional: `ALPHA_VANTAGE_API_KEY` for specialist market quotes, and `RESEND_API_KEY` + `BRIEFS_FROM_EMAIL` for digest email delivery.
+
+### Final production evaluation
+
 ```powershell
 $env:BRIEFS_EVAL_BASE_URL="https://briefs-blog.vercel.app"
-npm run eval:v9
+npm run eval:v10
 ```
 
-`SYSTEMS.md` is the canonical scope ledger through the V10 maximum.
+See `V10-BLUEPRINT.md`, `COMPETITIVE-BENCHMARK-V10.md`, and `SYSTEMS.md` for the final MVP contract.

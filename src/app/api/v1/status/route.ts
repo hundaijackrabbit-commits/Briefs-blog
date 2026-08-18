@@ -1,2 +1,2 @@
 import { NextResponse } from "next/server";
-export async function GET(){return NextResponse.json({ok:true,service:"briefs-public-api",version:"v1",productVersion:"0.9.0",capabilities:["brief","evidence","freshness","exports"]},{headers:{"cache-control":"public, max-age=60","access-control-allow-origin":"*","x-briefs-version":"0.9.0"}});}
+export async function GET(){return NextResponse.json({ok:true,service:"briefs-public-api",version:"v1",productVersion:"1.0.0",mvp:"complete",capabilities:["brief","iterative-research","evidence","freshness","comparison","context","exports","living-knowledge"]},{headers:{"cache-control":"public, max-age=60","access-control-allow-origin":"*","x-briefs-version":"1.0.0"}});}

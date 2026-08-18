@@ -46,6 +46,10 @@ export interface BriefContextSnapshot {
   entityHints:string[];
   claimIds:string[];
   sourceIds:string[];
+  sourceHints?:{id:string;name:string;url:string;tier:Tier;kind:string}[];
+  factHints?:{id:string;predicate:string;value:string;text:string;sourceIds:string[]}[];
+  lastSummary?:string;
+  knowledgeCutoff?:string;
 }
 
 export interface BriefRequest {
@@ -94,4 +98,7 @@ export interface BriefResult {
   freshnessStatus?:"live"|"current"|"historical";
   context?:BriefContextSnapshot;
   comparison?:{subject:string;summary:string;factCount:number;sourceCount:number}[];
+  quality?:{score:number;evidence:number;freshness:number;coverage:number;warnings:string[]};
+  research?:{iterations:number;stopReason?:string;persisted:boolean;independentSources:number};
+  contradictions?:{predicate:string;values:string[];sourceIds:string[]}[];
 }

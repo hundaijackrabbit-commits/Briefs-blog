@@ -35,7 +35,7 @@ const daily=fs.readFileSync(path.join(root,"src/lib/engine/daily.ts"),"utf8");
 const schema=fs.readFileSync(path.join(root,"db/schema.sql"),"utf8");
 const api=fs.readFileSync(path.join(root,"src/app/api/v1/brief/route.ts"),"utf8");
 const checks=[
-  [pkg.version==="0.9.0","package version 0.9.0"],
+  [["0.9.0","1.0.0"].includes(pkg.version),"package version preserves V9 or advances to V10"],
   [publicPage.includes('Article')&&publicPage.includes('BreadcrumbList'),"public Article/Breadcrumb structured data"],
   [publicPage.includes("claim-evidence"),"public claim evidence"],
   [layout.includes('SearchAction'),"WebSite SearchAction structured data"],

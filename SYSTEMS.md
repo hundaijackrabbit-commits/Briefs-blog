@@ -11,8 +11,8 @@ This file is the non-negotiable scope ledger. No later release may silently dele
 - V6 — research & source-discovery engine — complete/foundation
 - V7 — query intelligence, finance routing & change-intelligence expansion — complete/foundation
 - V8 — personal intelligence, context, evidence inspection & security integration — complete/foundation
-- V9 — authority/distribution: SEO, answer-engine visibility, feeds, listen, email, API & exports — current
-- V10 — production integration, scale, security, observability and product completion — planned
+- V9 — authority/distribution: SEO, answer-engine visibility, feeds, listen, email, API & exports — complete/foundation
+- V10 — MVP completion: persistent research memory, iterative research, living monitoring, signals, operations, security and final integration — complete
 
 Patch releases such as V4.1 do not consume a major-version slot.
 
@@ -31,28 +31,28 @@ Patch releases such as V4.1 do not consume a major-version slot.
 - Ingestion checkpoints — V5 operational foundation
 - Graceful degradation / last-safe-state philosophy — operational
 - Health/status endpoints — operational
-- Observability dashboard — foundation; V10 mature
+- Observability dashboard / operational snapshot — V10 operational foundation
 
 ## Knowledge intelligence
-- Semantic understanding — foundation
+- Semantic understanding — operational foundation
 - Entity resolution + aliases/identifiers — foundation
 - Event model/clustering — foundation
 - Claim model — operational foundation
-- Claim history/versioning — foundation
-- Evidence graph — foundation
-- Source independence/authority tiers — foundation
-- Verification engine — foundation
-- Contradiction engine — foundation
-- Knowledge graph — foundation
-- Temporal validity — foundation
-- Historical snapshots/state — foundation
-- Freshness engine — foundation
-- Change detection/intelligence — foundation
-- Impact mapper — foundation
+- Claim history/versioning — operational foundation
+- Evidence graph — operational foundation
+- Source independence/authority tiers — operational
+- Verification engine — operational foundation
+- Contradiction engine — operational foundation; V10 surfaces structured disagreement in Brief results
+- Knowledge graph — operational foundation
+- Temporal validity — operational foundation
+- Historical snapshots/state — operational foundation; V10 prior-state follow-up path
+- Freshness engine — operational foundation
+- Change detection/intelligence — operational foundation; V10 separates editorial change candidates from reader-facing observed changes
+- Impact mapper — operational foundation
 - Contextual importance — foundation
-- Coverage-gap engine — foundation
+- Coverage-gap engine — operational foundation
 - Topic authority scoring — foundation
-- Quality evaluation — foundation
+- Quality evaluation — operational; V10 quality score/warnings on each Brief result
 - V5 Knowledge Store — operational
 - V5 source packs — operational foundation
 - V5 verified starter corpus — operational
@@ -68,9 +68,9 @@ Patch releases such as V4.1 do not consume a major-version slot.
 - Approval/rejection/defer — operational
 - Rollback — operational foundation
 - Correction log — operational foundation
-- Citation maintenance — foundation
-- Freshness maintenance — foundation
-- Internal-link intelligence — foundation
+- Citation maintenance — operational foundation
+- Freshness maintenance — operational foundation
+- Internal-link intelligence — operational foundation
 - Sensitive/high-risk manual routing — operational
 
 ## Brief Me product
@@ -86,26 +86,26 @@ Patch releases such as V4.1 do not consume a major-version slot.
 - Evidence drawer/claim-level inspection — V8 operational
 - Explicit knowledge cutoff — operational
 - Research-needed state — operational
-- Research request persistence — V5 foundation
-- Follow-up conversational context storage — V8 operational foundation; DB persistence when Postgres is configured
-- Compare/query decomposition — V6 foundation; V8 comparison surface operational foundation
-- “What changed?” — V7 operational foundation for finance/current queries; continuous maintenance continues through V8/V10
+- Research request persistence — operational foundation
+- Follow-up conversational context storage — operational; DB persistence when Postgres is configured; V10 evidence/prior-state follow-up intents
+- Compare/query decomposition — operational foundation; comparison surface operational
+- “What changed?” — operational foundation for finance/current queries; V10 tracked-subject refresh + observed-change persistence
 - “Since I was here” — V8 operational foundation (local + DB-backed read state)
-- Read/listen/export renderers — V9 operational foundation; watch/video renderer remains V10
+- Read/listen/export renderers — operational; visual/watch storyboard remains post-MVP expansion
 
 ## Research & discovery
 - Question decomposition — V6 operational foundation
 - Targeted external research orchestrator — V6 operational
 - Keyless Wikipedia provider — V6 operational
 - Keyless Wikidata structured provider — V6 operational
-- Provider time budgets / failure isolation — V6 operational
-- Source discovery/ranking — V6 operational foundation
+- Provider time budgets / failure isolation — operational; V10 provider health telemetry
+- Source discovery/ranking — operational foundation; V10 safe discovered-page corroboration
 - Source-family independence detection — V6 operational foundation
-- Missing-evidence acquisition — V6 operational foundation
+- Missing-evidence acquisition — operational; bounded multi-pass refinement
 - Temporary research graph / staged findings — V6 operational
-- Research-run/evidence/finding persistence — V6 operational when Postgres is configured
-- Reviewed knowledge insertion — V6 data foundation; admin promotion workflow matures V8/V10
-- Research context storage — V6 foundation
+- Research-run/evidence/finding persistence — operational when Postgres is configured
+- Persistent research memory — V10 operational when Postgres is configured; reviewed claim promotion remains editorially guarded
+- Research context storage — operational foundation
 - Query Intent Engine — V7 operational
 - Intent-specific Answer Contracts — V7 operational foundation (market snapshot, market move, financials, current/reference)
 - SEC company/ticker resolver — V7 operational
@@ -116,10 +116,10 @@ Patch releases such as V4.1 do not consume a major-version slot.
 - Market snapshot persistence — V7 operational when Postgres is configured
 - Change-candidate persistence — V7 operational when Postgres is configured
 - Competitive prompt evaluation harness — V7 operational
-- Emerging-topic detection — V10
-- Velocity/trend engine — V10
-- Briefs Signals — V10 planned
-- Proprietary indexes/datasets — V10 planned
+- Emerging-topic detection — V10 operational foundation via observed-change Signals
+- Velocity/trend engine — V10 operational foundation (7-day vs prior-window velocity)
+- Briefs Signals — V10 operational foundation
+- Briefs-owned Signals index — V10 operational foundation; external premium/proprietary datasets remain post-MVP integrations
 
 ## Query intelligence & domain routing
 - Query Intent Engine — V7 operational
@@ -146,7 +146,7 @@ Patch releases such as V4.1 do not consume a major-version slot.
 - Daily personal digest generation — V8 operational foundation; V9 optional external email delivery operational
 - Finite “you’re caught up” experience — V8 operational
 - Conversation/turn persistence — V8 operational foundation
-- Pro tier/premium data controls — V10 planned
+- Pro tier/premium data controls — post-MVP commercial layer; source-policy/entitlement hooks preserved
 
 ## V8 integration & security
 - Admin UI authentication gate before server-rendered DB reads — V8 operational
@@ -165,10 +165,10 @@ Patch releases such as V4.1 do not consume a major-version slot.
 - SEO and answer-engine readiness — V9 operational foundation
 - RSS/news feeds/sitemaps — V9 operational
 - Email briefings — V9 operational when email provider is configured
-- Browser listen renderer — V9 operational; generated audio/watch media — V10
+- Browser listen renderer — operational; generated audio/video media is post-MVP expansion
 - Briefs public API v1 / Markdown, CSV, JSON exports — V9 operational foundation
-- Enterprise/team workspaces — V10
-- Security hardening, auditability and scale testing — V10
+- Enterprise/team workspaces — post-MVP expansion (not required for the completed consumer MVP)
+- Security hardening / auditability — V10 operational foundation; large-scale load testing continues operationally after MVP
 
 ## V9 authority & distribution
 - Public Brief index — operational
@@ -191,3 +191,27 @@ Patch releases such as V4.1 do not consume a major-version slot.
 - Developer documentation surface — operational
 - Ephemeral query/personal surfaces marked noindex — operational
 - Dynamic social preview image — operational foundation
+
+
+## V10 MVP completion
+- V10 — MVP completion — complete
+- Production readiness contract — operational (`DATABASE_URL`, `ADMIN_TOKEN`, `CRON_SECRET`, canonical base URL; optional market/email providers reported separately)
+- Persistent research memory — operational with Postgres, freshness-aware TTLs
+- Living research-state comparison — operational; changes persist to `observed_changes` without colliding with editorial `change_candidates`
+- Bounded iterative research — operational with hard provider budgets, gap evaluation, no-progress stopping and maximum refinement passes
+- Safe discovered-page corroboration — operational; only ranked public discovered URLs are fetched and private/local hosts are rejected
+- Scholarly evidence discovery — operational via OpenAlex
+- Current reporting discovery — operational via GDELT
+- Finance specialization — operational via SEC + optional market quote provider
+- Evidence and previous-state follow-up intents — operational foundation
+- Per-Brief quality scoring / warnings — operational
+- Structured contradiction surfacing — operational foundation
+- Tracked-subject autonomous refresh — operational foundation in the daily engine
+- Emerging-topic / velocity Signals — operational foundation
+- Provider health + runtime observations — operational foundation
+- Admin operations surface — operational and protected by the admin gate
+- Security response headers — operational
+- DB doctor / final architecture gate / production adversarial evaluation — operational
+- Safe degraded mode remains a product requirement: missing DB/provider data never authorizes fabricated freshness or invented citations
+
+V10 closes the ten-version MVP roadmap. Future work is normal post-MVP iteration, commercial integrations, scale work, or product expansion rather than another promised architecture version.

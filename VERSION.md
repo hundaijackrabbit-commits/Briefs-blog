@@ -1,7 +1,7 @@
-# Briefs.blog V9 — Authority & Distribution
+# Briefs.blog V10 / 1.0.0
 
-Package version: **0.9.0**
+**Status:** MVP completion release.
 
-V9 makes the intelligence architecture durable and externally legible: canonical Brief pages, evidence/provenance, structured metadata, public feeds, exports, a limited public API, listen mode, and optional digest email delivery.
+V10 closes the ten-version roadmap by integrating bounded iterative research, persistent research memory, living change observations, tracked-subject monitoring, Signals, quality/disagreement surfacing, evidence/prior-state follow-ups, production readiness, telemetry, security headers and final evaluation tooling while preserving V1–V9 systems.
 
-V1–V8 systems remain preserved. V10 is the final major release and is reserved for production integration, scale, security, observability, Signals/trend maturity, generated media and commercial hardening.
+The application remains intentionally safe when configuration is incomplete. A missing database or optional provider reduces capability; it does not authorize fabricated evidence or freshness.

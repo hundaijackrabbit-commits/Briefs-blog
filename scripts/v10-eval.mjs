@@ -1,0 +1,14 @@
+const base=(process.env.BRIEFS_EVAL_BASE_URL||"http://localhost:3000").replace(/\/$/,"");
+async function brief(subject,extra={}){
+  const started=Date.now();const res=await fetch(`${base}/api/brief`,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({subject,depth:"standard",perspective:"general",sourcePolicy:"verified",freshnessRequirement:/today|latest|this week|stock|earnings/i.test(subject)?"recent":"current",format:"api",...extra})});
+  const body=await res.json().catch(()=>({}));return {ok:res.ok,status:res.status,ms:Date.now()-started,body};
+}
+const cases=[
+ ["WW2","history"],["Austin Powers","general"],["Apple stock","market_snapshot"],["Why did Apple stock move today?","market_move"],["AAPL earnings","financials"],["Latest Anthropic news","current_update"],["Compare Nvidia vs AMD","compare"],["What changed in AI this week?","current_update"],["Explain quantum computing like I'm a marketer","explain"]
+];
+let failures=0;const rows=[];
+for(const [subject,expected] of cases){const r=await brief(subject);const result=r.body?.result;const intent=result?.intent;const critical=r.ok&&Boolean(result?.summary)&&intent===expected;rows.push({subject,status:r.status,intent,expected,confidence:result?.confidence,quality:result?.quality?.score,sources:result?.sources?.length||0,research:result?.sourceMode,ms:r.ms,pass:critical});if(!critical)failures++;}
+const first=await brief("Apple stock");const context=first.body?.result?.context;if(context){const evidence=await brief("What evidence supports that?",{context});rows.push({subject:"↳ evidence follow-up",status:evidence.status,intent:evidence.body?.result?.intent,expected:"evidence",sources:evidence.body?.result?.sources?.length||0,quality:evidence.body?.result?.quality?.score,ms:evidence.ms,pass:evidence.body?.result?.intent==="evidence"});if(evidence.body?.result?.intent!=="evidence")failures++;const previous=await brief("What did you previously believe about this?",{context});rows.push({subject:"↳ previous-state follow-up",status:previous.status,intent:previous.body?.result?.intent,expected:"previous_state",sources:previous.body?.result?.sources?.length||0,quality:previous.body?.result?.quality?.score,ms:previous.ms,pass:previous.body?.result?.intent==="previous_state"});if(previous.body?.result?.intent!=="previous_state")failures++;}
+console.table(rows);
+for(const path of ["/api/health","/api/research/status","/api/knowledge/status","/api/v1/status","/api/signals","/robots.txt","/sitemap.xml","/feed.xml"]){try{const res=await fetch(`${base}${path}`);console.log(res.ok?"PASS":"FAIL",path,res.status);if(!res.ok)failures++;}catch(e){console.log("FAIL",path,String(e));failures++;}}
+if(failures){console.error(`V10 evaluation found ${failures} critical regression(s).`);process.exit(1);}console.log("V10 production evaluation passed critical routing and surface checks.");

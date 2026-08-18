@@ -32,7 +32,7 @@ create table if not exists market_snapshots (
 );
 create index if not exists market_snapshots_ticker_idx on market_snapshots(ticker,observed_at desc);
 
-create table if not exists change_candidates (
+create table if not exists observed_changes (
   id uuid primary key default gen_random_uuid(),
   subject text not null,
   change_type text not null,
@@ -46,5 +46,5 @@ create table if not exists change_candidates (
   fingerprint text not null unique,
   metadata jsonb not null default '{}'::jsonb
 );
-create index if not exists change_candidates_subject_idx on change_candidates(lower(subject),observed_at desc);
-create index if not exists change_candidates_status_idx on change_candidates(status,importance desc,observed_at desc);
+create index if not exists observed_changes_subject_idx on observed_changes(lower(subject),observed_at desc);
+create index if not exists observed_changes_status_idx on observed_changes(status,importance desc,observed_at desc);

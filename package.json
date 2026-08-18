@@ -1,13 +1,13 @@
 {
   "name": "briefs-blog",
-  "version": "0.9.0",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "check": "npm run typecheck && npm run v4check && npm run v5check && npm run v6check && npm run v7check && npm run intentcheck && npm run v8check && npm run v9check",
+    "check": "npm run typecheck && npm run v4check && npm run v5check && npm run v6check && npm run v7check && npm run intentcheck && npm run v8check && npm run v9check && npm run v10check",
     "staticcheck": "node scripts/run-check.mjs scripts/static-check.py",
     "stabilize": "node scripts/run-check.mjs scripts/stabilization-check.py",
     "v4check": "node scripts/run-check.mjs scripts/v4-check.py",
@@ -20,7 +20,10 @@
     "v8check": "node scripts/v8-check.mjs",
     "eval:v8": "node scripts/v8-eval.mjs",
     "v9check": "node scripts/v9-check.mjs",
-    "eval:v9": "node scripts/v9-eval.mjs"
+    "eval:v9": "node scripts/v9-eval.mjs",
+    "v10check": "node scripts/v10-check.mjs",
+    "eval:v10": "node scripts/v10-eval.mjs",
+    "db:doctor": "node scripts/db-doctor.mjs"
   },
   "dependencies": {
     "next": "16.2.2",

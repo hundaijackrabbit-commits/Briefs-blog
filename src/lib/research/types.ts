@@ -13,7 +13,7 @@ export type ResearchQueryPlan={
 
 export type ResearchSource={
   id:string;
-  provider:"wikipedia"|"wikidata"|"external";
+  provider:"wikipedia"|"wikidata"|"openalex"|"external";
   name:string;
   title:string;
   url:string;
@@ -53,6 +53,8 @@ export type ResearchGraph={
   knowledgeCutoff:string;
   iterations?:{iteration:number;gapKind:string;reason:string;nextQuery:string}[];
   comparison?:{subject:string;summary:string;factCount:number;sourceCount:number}[];
+  stopReason?:"sufficient"|"budget"|"no-progress"|"provider-limits";
+  persisted?:boolean;
 };
 
 export interface ResearchProvider {

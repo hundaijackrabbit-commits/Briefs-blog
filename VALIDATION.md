@@ -1,31 +1,21 @@
-# Briefs validation
+# Validation
 
-## V9 local release gate
-Run from the project root:
+V10 carries forward every preservation gate from V4 through V9 and adds a final MVP gate.
+
+Local release gate:
 
 ```bash
 npm install
 npm run typecheck
 npm run check
+npm run db:doctor
 npm run build
 ```
 
-`npm run check` preserves the V4–V8 architecture checks and adds the V9 authority/distribution contract.
+Production gate:
 
-## V9 production gate
-After deployment:
-
-```powershell
-$env:BRIEFS_EVAL_BASE_URL="https://briefs-blog.vercel.app"
-npm run eval:v9
+```bash
+BRIEFS_EVAL_BASE_URL=https://briefs-blog.vercel.app npm run eval:v10
 ```
 
-The deployed smoke suite checks health, API status, robots, sitemap, RSS, llms.txt, a canonical WW2 page, the public Brief API and Markdown export.
-
-## Manual authority checks
-- View page source on `/briefs/world-war-ii` and confirm Article + Breadcrumb JSON-LD.
-- Confirm `/brief-me?q=WW2` is noindex while `/briefs/world-war-ii` is indexable.
-- Expand a tracked claim and open its supporting evidence.
-- Confirm the visible verification date comes from knowledge evidence, not merely request time.
-- Confirm RSS and sitemap URLs use `BRIEFS_BASE_URL` in production.
-- Confirm email delivery remains disabled without credentials and does not fail the daily intelligence run.
+The V10 check verifies iterative research, persistent research memory, Signals, historical/evidence follow-ups, quality/disagreement surfaces, operational telemetry, security headers, schema separation between editorial and reader-facing change streams, and preservation of earlier systems.
