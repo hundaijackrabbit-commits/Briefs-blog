@@ -42,7 +42,7 @@ values
 ('world-war-ii:formal-end','world-war-ii','Formal end','September 2, 1945','static','corroborated','high','1945-09-02T00:00:00Z','2026-08-16T00:00:00Z'),
 ('world-war-ii:major-sides','world-war-ii','Major coalitions','Allies and Axis','static','corroborated','high','1939-09-01T00:00:00Z','2026-08-16T00:00:00Z'),
 ('world-war-ii:holocaust','world-war-ii','Holocaust','Six million Jews murdered','static','confirmed','high',null,'2026-08-16T00:00:00Z')
-on conflict(claim_key) do update set value_text=excluded.value_text,verification_status=excluded.verification_status,confidence=excluded.confidence,last_verified_at=excluded.last_verified_at;
+on conflict(claim_key) where claim_key is not null do update set value_text=excluded.value_text,verification_status=excluded.verification_status,confidence=excluded.confidence,last_verified_at=excluded.last_verified_at;
 
 insert into claim_evidence(claim_id,document_id,stance,excerpt,source_tier)
 select c.id,d.id,'supports',null,s.tier
@@ -71,3 +71,4 @@ on conflict(brief_id,claim_id) do nothing;
 insert into source_pack_sources(pack_id,source_id,priority)
 values ('starter-history','ushmm-ww2',100),('starter-history','iwm-ww2',95),('starter-history','britannica-ww2',80)
 on conflict(pack_id,source_id) do update set priority=excluded.priority;
+
