@@ -1,0 +1,131 @@
+"use client";
+
+import { ChangeEvent, FormEvent, useState } from "react";
+
+type Props = {
+  initial: {
+    keywords: any[];
+    opportunities: any[];
+    articles: any[];
+    updates: any[];
+    queue: any[];
+  };
+};
+
+export default function PublicationClient({ initial }: Props) {
+  const [busy, setBusy] = useState("");
+  const [message, setMessage] = useState("");
+  const [keyword, setKeyword] = useState("");
+  const [category, setCategory] = useState("Technology");
+  const [audience, setAudience] = useState("smart-generalist");
+  const [mode, setMode] = useState("review");
+
+  async function action(name: string, id?: string, extra: Record<string, unknown> = {}) {
+    const key = `${name}:${id || ""}`;
+    setBusy(key); setMessage("");
+    try {
+      const res = await fetch("/api/admin/publication", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: name, id, ...extra })
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body?.error || "Publication action failed");
+      setMessage(`${name.replace(/-/g, " ")} completed.`);
+      window.location.reload();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Publication action failed");
+    } finally {
+      setBusy("");
+    }
+  }
+
+  function addKeyword(e: FormEvent) {
+    e.preventDefault();
+    void action("add-keyword", undefined, { keyword, category, audience, mode });
+  }
+
+  return <main className="section">
+    <p className="eyebrow">BRIEFS · PUBLICATION ENGINE 1.1</p>
+    <h1>Publication desk</h1>
+    <p className="lede">Keywords trigger investigation, not automatic prose. Research, evidence, originality, audience and editorial gates all have to pass before publication.</p>
+
+    {message && <div className="card"><strong>{message}</strong></div>}
+
+    <section className="card">
+      <h2>Watch a keyword</h2>
+      <form onSubmit={addKeyword}>
+        <p><input value={keyword} onChange={(e:ChangeEvent<HTMLInputElement>) => setKeyword(e.target.value)} placeholder="AI agents, Apple services, private credit…" required /></p>
+        <p>
+          <label>Category <input value={category} onChange={(e:ChangeEvent<HTMLInputElement>) => setCategory(e.target.value)} /></label>{" "}
+          <label>Audience <select value={audience} onChange={(e:ChangeEvent<HTMLSelectElement>) => setAudience(e.target.value)}>
+            <option value="smart-generalist">Smart general reader</option><option value="executive">Executive</option>
+            <option value="investor">Investor</option><option value="developer">Developer</option>
+            <option value="student">Student</option><option value="marketer">Marketer</option>
+          </select></label>{" "}
+          <label>Mode <select value={mode} onChange={(e:ChangeEvent<HTMLSelectElement>) => setMode(e.target.value)}>
+            <option value="review">Review</option><option value="auto">Auto (strict gates)</option><option value="manual">Manual</option>
+          </select></label>
+        </p>
+        <button disabled={busy.startsWith("add-keyword")}>Add keyword</button>
+      </form>
+    </section>
+
+    <section>
+      <div className="brief-result-head"><div><p className="eyebrow">MONITORING</p><h2>Keyword desk</h2></div>
+        <button onClick={() => action("schedule-maintenance")} disabled={Boolean(busy)}>Schedule daily checks</button></div>
+      <div className="grid">
+        {initial.keywords.map(k => <article className="card" key={k.id}>
+          <p className="eyebrow">{k.category} · {k.editorial_mode}</p><h3>{k.keyword}</h3>
+          <p>Next research: {new Date(k.next_research_at).toLocaleString()}</p>
+          <p><button onClick={() => action("research-keyword", k.id)} disabled={Boolean(busy)}>Research now</button>{" "}
+          <button onClick={() => action("toggle-keyword", k.id)} disabled={Boolean(busy)}>{k.active ? "Pause" : "Resume"}</button></p>
+        </article>)}
+      </div>
+    </section>
+
+    <section>
+      <p className="eyebrow">STORY OPPORTUNITIES</p><h2>Worth writing?</h2>
+      <div className="grid">
+        {initial.opportunities.length === 0 ? <article className="card"><p>No opportunities yet.</p></article> :
+          initial.opportunities.map(o => <article className="card" key={o.id}>
+            <p className="eyebrow">{o.status} · SCORE {o.story_score}</p><h3>{o.suggested_angle}</h3>
+            <p>{o.rationale}</p>
+            <p>Evidence {o.evidence_score} · Novelty {o.novelty_score} · Freshness {o.freshness_score}</p>
+            {o.status === "candidate" && <p><button onClick={() => action("draft-opportunity", o.id)} disabled={Boolean(busy)}>Draft through gates</button>{" "}
+              <button onClick={() => action("dismiss-opportunity", o.id)} disabled={Boolean(busy)}>Dismiss</button></p>}
+          </article>)}
+      </div>
+    </section>
+
+    <section>
+      <p className="eyebrow">ARTICLES</p><h2>Publication queue</h2>
+      <div className="grid">
+        {initial.articles.length === 0 ? <article className="card"><p>No generated articles yet.</p></article> :
+          initial.articles.map(a => <article className="card" key={a.id}>
+            <p className="eyebrow">{a.status} · {a.freshness_status}</p><h3>{a.title}</h3>
+            <p>Quality {a.quality_score}/100 · {a.category}</p>
+            {a.status === "review" && <button onClick={() => action("publish-article", a.id)} disabled={Boolean(busy)}>Publish</button>}
+            {a.status === "published" && <p><a href={`/articles/${a.slug}`} target="_blank">View article →</a></p>}
+          </article>)}
+      </div>
+    </section>
+
+    <section>
+      <div className="brief-result-head"><div><p className="eyebrow">DAILY REVALIDATION</p><h2>Update proposals</h2></div>
+        <button onClick={() => action("run-worker", undefined, { maxItems: 3 })} disabled={Boolean(busy)}>Process queue</button></div>
+      <div className="grid">
+        {initial.updates.length === 0 ? <article className="card"><p>No pending publication updates.</p></article> :
+          initial.updates.map(u => <article className="card" key={u.id}>
+            <p className="eyebrow">{u.target_type} · {u.review_mode} · {u.status}</p>
+            <h3>{u.summary}</h3><p>{u.reason}</p>
+            {u.status === "proposed" &&
+              <button onClick={() => action("publish-update", u.id)} disabled={Boolean(busy)}>
+                Publish verified {u.target_type === "brief" ? "Brief" : "article"} update
+              </button>}
+          </article>)}
+      </div>
+      <p className="muted">{initial.queue.map(q => `${q.target_type}/${q.status}: ${q.count}`).join(" · ") || "Queue clear"}</p>
+    </section>
+  </main>;
+}

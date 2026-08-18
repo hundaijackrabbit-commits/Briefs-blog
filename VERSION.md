@@ -1,7 +1,9 @@
-# Briefs.blog V10 / 1.0.0
+# Briefs.blog 1.1.0 — Publication Engine
 
-**Status:** MVP completion release.
+**Status:** Post-MVP publication intelligence release.
 
-V10 closes the ten-version roadmap by integrating bounded iterative research, persistent research memory, living change observations, tracked-subject monitoring, Signals, quality/disagreement surfacing, evidence/prior-state follow-ups, production readiness, telemetry, security headers and final evaluation tooling while preserving V1–V9 systems.
+The ten-version MVP roadmap remains closed at V10. Publication Engine 1.1 adds the newsroom layer on top of the completed intelligence system: keyword watches, story-opportunity scoring, reader contracts, authorial voice checks, claim-grounded article composition, originality gates, public Briefings, durable daily revalidation, article version history, Living Brief update proposals and bounded publication workers.
 
-The application remains intentionally safe when configuration is incomplete. A missing database or optional provider reduces capability; it does not authorize fabricated evidence or freshness.
+V10 systems remain preserved. This is not V11.
+
+The application retains the permanent safety rule: missing evidence, configuration or provider availability reduces capability; it never authorizes fabricated facts, citations, originality claims or freshness.

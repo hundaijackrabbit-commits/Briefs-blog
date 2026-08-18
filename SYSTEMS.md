@@ -14,7 +14,7 @@ This file is the non-negotiable scope ledger. No later release may silently dele
 - V9 — authority/distribution: SEO, answer-engine visibility, feeds, listen, email, API & exports — complete/foundation
 - V10 — MVP completion: persistent research memory, iterative research, living monitoring, signals, operations, security and final integration — complete
 
-Patch releases such as V4.1 do not consume a major-version slot.
+Patch releases and post-MVP product releases such as V4.1 and Publication Engine 1.1 do not consume a major-version slot.
 
 ## Reliability & orchestration
 - Source registry — operational
@@ -40,7 +40,7 @@ Patch releases such as V4.1 do not consume a major-version slot.
 - Claim model — operational foundation
 - Claim history/versioning — operational foundation
 - Evidence graph — operational foundation
-- Source independence/authority tiers — operational
+- Source independence/authority tiers — foundation
 - Verification engine — operational foundation
 - Contradiction engine — operational foundation; V10 surfaces structured disagreement in Brief results
 - Knowledge graph — operational foundation
@@ -81,6 +81,7 @@ Patch releases such as V4.1 do not consume a major-version slot.
 - Verified fallback path — V5 operational
 - Depth selector — operational foundation
 - Perspective selector — operational; V7 automatically applies investor lens to finance queries unless explicitly overridden
+- Reader-targeted Brief phrasing — Publication Engine 1.1 operational foundation; explicit perspectives shape the opening instead of writing to an undefined audience
 - Evidence list — V5 operational
 - Claim-level evidence counts — V6 operational foundation
 - Evidence drawer/claim-level inspection — V8 operational
@@ -192,7 +193,6 @@ Patch releases such as V4.1 do not consume a major-version slot.
 - Ephemeral query/personal surfaces marked noindex — operational
 - Dynamic social preview image — operational foundation
 
-
 ## V10 MVP completion
 - V10 — MVP completion — complete
 - Production readiness contract — operational (`DATABASE_URL`, `ADMIN_TOKEN`, `CRON_SECRET`, canonical base URL; optional market/email providers reported separately)
@@ -213,5 +213,32 @@ Patch releases such as V4.1 do not consume a major-version slot.
 - Security response headers — operational
 - DB doctor / final architecture gate / production adversarial evaluation — operational
 - Safe degraded mode remains a product requirement: missing DB/provider data never authorizes fabricated freshness or invented citations
+
+## Publication Engine 1.1 — post-MVP publication intelligence
+- Publication Engine 1.1 — operational foundation; post-MVP release, not V11
+- Keyword Watcher — operational
+- Story Opportunity Engine — operational foundation
+- Reader Demand / Audience Engine — operational foundation
+- Reader Contract — operational
+- Authorial Voice Engine — operational
+- Claim-grounded Article Composer — operational foundation
+- Optional provider-neutral writer adapter — operational interface
+- Source-language Originality Engine — operational foundation
+- Internal-library similarity check — operational foundation
+- Publication Quality Engine — operational
+- Content Dependency Engine — operational foundation
+- Publication Impact / affected-section detection — operational foundation
+- Daily Revalidation Engine — operational
+- Revision Intelligence Engine — operational foundation
+- Publication Freshness Engine — operational
+- Durable publication revalidation queue + stale lease recovery — operational
+- Publication update proposals — operational
+- Article version history — operational
+- Public Briefings index + article renderer — operational
+- Article evidence surface — operational
+- AUTO / REVIEW / MANUAL publication routing — operational foundation
+- Living Brief claim supersession path — operational foundation when strong revalidated claims are approved/auto-enabled
+- Safe no-op revalidation — operational: unchanged knowledge does not rewrite prose or fake a substantial update
+- Existing daily intelligence cron schedules publication work; bounded publication cron processes the queue in batches
 
 V10 closes the ten-version MVP roadmap. Future work is normal post-MVP iteration, commercial integrations, scale work, or product expansion rather than another promised architecture version.

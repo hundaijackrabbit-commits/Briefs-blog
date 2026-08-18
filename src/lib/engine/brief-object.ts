@@ -23,6 +23,17 @@ function qualityScore(input:{claims:number;sourced:number;sources:number;cutoff:
   return {score,evidence,freshness,coverage,warnings};
 }
 
+function shapeForReader(text:string,perspective:BriefRequest["perspective"]){
+  const clean=text.replace(/\s+/g," ").trim();
+  if(!clean||perspective==="general")return clean;
+  if(perspective==="investor")return `For an investor, the key point is this: ${clean}`;
+  if(perspective==="executive")return `For an executive, the decision-relevant point is this: ${clean}`;
+  if(perspective==="developer")return `For a developer, the practical point is this: ${clean}`;
+  if(perspective==="student")return `The simplest useful way to understand this is: ${clean}`;
+  if(perspective==="marketer")return `For a marketer, the audience and market implication starts here: ${clean}`;
+  return clean;
+}
+
 export async function composeBrief(request:BriefRequest):Promise<{plan:BriefPlan;result:BriefResult}>{
   const contextual=contextualizeRequest(request);const intent=classifyQuery(contextual);void persistQueryIntent(intent,contextual);
   const knowledge=await loadKnowledge({...contextual,perspective:intent.effectivePerspective});
@@ -32,7 +43,8 @@ export async function composeBrief(request:BriefRequest):Promise<{plan:BriefPlan
   const keyFacts=knowledge.claims.slice(0,factLimit).map(c=>({label:c.predicate,value:c.valueText,text:c.text,claimId:c.id,sourceIds:c.sourceIds}));
   const sourceIds=new Set<string>();for(const claim of knowledge.claims)for(const id of claim.sourceIds)sourceIds.add(id);const sources=knowledge.sources.filter(s=>sourceIds.size===0||sourceIds.has(s.id));
   const contradictions=contradictionSummary(knowledge.claims);const sourced=knowledge.claims.filter(c=>c.sourceIds.length).length;
-  let summary=knowledge.description;let why=knowledge.whyItMatters||(knowledge.changes.length?`There ${knowledge.changes.length===1?"is":"are"} ${knowledge.changes.length} recorded change${knowledge.changes.length===1?"":"s"} in the selected period.`:(request.timeRange||request.freshnessRequirement==="recent"?"No material change is recorded for the selected period.":""));
+  let summary=shapeForReader(knowledge.description,intent.effectivePerspective);
+  let why=knowledge.whyItMatters||(knowledge.changes.length?`There ${knowledge.changes.length===1?"is":"are"} ${knowledge.changes.length} recorded change${knowledge.changes.length===1?"":"s"} in the selected period.`:(request.timeRange||request.freshnessRequirement==="recent"?"No material change is recorded for the selected period.":""));
   if(intent.intent==="evidence"){
     summary=sources.length?`Briefs currently supports ${knowledge.subject} with ${sources.length} eligible source${sources.length===1?"":"s"} tied to ${sourced} of ${knowledge.claims.length} retrieved claim${knowledge.claims.length===1?"":"s"}. Expand Key facts to inspect claim-level evidence, or open the Evidence section for the source set.`:`Briefs does not currently have inspectable source evidence for ${knowledge.subject}. It will not manufacture citations.`;
     why="This answer reports the provenance already attached to the Brief instead of generating a new narrative and presenting it as evidence.";

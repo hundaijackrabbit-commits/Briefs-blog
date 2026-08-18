@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function Home(){
   return <main className="home-minimal">
     <section className="home-prompt" aria-labelledby="home-title">
@@ -10,6 +12,7 @@ export default function Home(){
         <button type="submit" className="home-query-submit" aria-label="Create brief">→</button>
       </form>
       <p className="home-hint">Ask about a company, person, technology, market, idea, or change.</p>
+      <p className="home-hint"><Link href="/articles">Read Briefings →</Link></p>
     </section>
   </main>;
 }

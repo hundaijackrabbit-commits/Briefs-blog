@@ -12,7 +12,7 @@ const read=f=>fs.readFileSync(path.join(root,f),"utf8");
 const pkg=JSON.parse(read("package.json"));const research=read("src/lib/research/research-engine.ts");const store=read("src/lib/knowledge/store.ts");const brief=read("src/lib/engine/brief-object.ts");const daily=read("src/lib/engine/daily.ts");const schema=read("db/schema.sql");const systems=read("SYSTEMS.md");const next=read("next.config.ts");const health=read("src/app/api/health/route.ts");const intent=read("src/lib/intelligence/query-intent.ts");
 const count=(needle)=>schema.split(needle).length-1;
 const checks=[
- [pkg.version==="1.0.0","package version 1.0.0"],
+ [/^1\./.test(pkg.version),"package remains on completed 1.x MVP line"],
  [research.includes("loadResearchMemory")&&research.includes("maxIterations")&&research.includes("researchDiscoveredPages"),"bounded iterative research + persistent memory"],
  [research.includes("openAlexProvider"),"scholarly provider routing"],
  [store.includes('intent.intent==="previous_state"')&&store.includes("mergeKnowledge"),"historical-memory + research merge"],
@@ -23,7 +23,7 @@ const checks=[
  [count("create table if not exists change_candidates (")===1,"editorial change_candidates schema is not shadowed"],
  [count("create table if not exists observed_changes (")>=1,"reader-facing observed change stream"],
  [next.includes("X-Content-Type-Options")&&next.includes("X-Frame-Options")&&next.includes("Permissions-Policy"),"security headers"],
- [health.includes('mvp:"complete"')&&health.includes('version:"1.0.0"'),"V10 health contract"],
+ [health.includes('mvp:"complete"')&&health.includes('version:"1.'),"completed MVP health contract"],
  [systems.includes("V10 — MVP completion — complete")&&systems.includes("Durable job queue")&&systems.includes("Evidence graph")&&systems.includes("Editorial policy engine")&&systems.includes("Reader accounts")&&systems.includes("Public API v1"),"canonical system ledger completion + preservation"]
 ];
 const failed=checks.filter(([ok])=>!ok);for(const [ok,name] of checks)console.log(ok?"PASS":"FAIL",name);if(failed.length)process.exit(1);console.log(`V10 MVP architecture check passed (${checks.length} checks).`);
