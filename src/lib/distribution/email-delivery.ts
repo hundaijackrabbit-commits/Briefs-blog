@@ -31,7 +31,9 @@ export async function deliverPendingDigestEmails(){
     const prior=await sql`select 1 from distribution_deliveries where channel='email' and account_id=${accountId}::uuid and fingerprint=${fingerprint} and status='sent' limit 1`;
     if(prior.length) continue;
     const result=await resend(group.email,`Briefs · ${items.length} meaningful update${items.length===1?"":"s"}`,renderDigestEmail(items));
-    await sql`insert into distribution_deliveries(account_id,channel,destination,fingerprint,status,provider_id,error,metadata) values(${accountId}::uuid,'email',${group.email},${fingerprint},${result.ok?"sent":"failed"},${result.ok?result.id:null},${result.ok?null:result.error},${sql.json(JSON.parse(JSON.stringify({notificationIds:items.map(i=>String(i.notification_id))})))}) on conflict(channel,account_id,fingerprint) do update set status=excluded.status,provider_id=excluded.provider_id,error=excluded.error,updated_at=now()`;
+    const providerId:string|null=result.ok?(result.id??null):null;
+    const deliveryError:string|null=result.ok?null:(result.error??"unknown-email-error");
+    await sql`insert into distribution_deliveries(account_id,channel,destination,fingerprint,status,provider_id,error,metadata) values(${accountId}::uuid,'email',${group.email},${fingerprint},${result.ok?"sent":"failed"},${providerId},${deliveryError},${sql.json(JSON.parse(JSON.stringify({notificationIds:items.map(i=>String(i.notification_id))})))}) on conflict(channel,account_id,fingerprint) do update set status=excluded.status,provider_id=excluded.provider_id,error=excluded.error,updated_at=now()`;
     if(result.ok){await sql`update reader_notifications set email_sent_at=now() where id=any(${items.map(i=>String(i.notification_id))}::uuid[])`;delivered+=items.length;}else failed++;
   }
   return {status:failed?"partial":"completed",accounts:grouped.size,delivered,failed};
