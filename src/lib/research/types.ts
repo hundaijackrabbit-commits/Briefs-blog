@@ -51,6 +51,8 @@ export type ResearchGraph={
   sufficient:boolean;
   generatedAt:string;
   knowledgeCutoff:string;
+  iterations?:{iteration:number;gapKind:string;reason:string;nextQuery:string}[];
+  comparison?:{subject:string;summary:string;factCount:number;sourceCount:number}[];
 };
 
 export interface ResearchProvider {

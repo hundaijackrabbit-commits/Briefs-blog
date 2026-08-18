@@ -1,44 +1,50 @@
 # Briefs.blog
 
-Briefs is a living knowledge and briefing platform. The public product stays intentionally simple — **Brief me on …** — while the backend maintains entities, claims, evidence, research, changes, freshness, query intent and editorial state.
+Briefs is a living knowledge and briefing platform. The public product stays intentionally simple — **Brief me on …** — while the backend maintains entities, claims, evidence, research, changes, freshness, query intent, editorial state and personal reading context.
 
-## V7 quick start
+## V8 quick start
 
 ```bash
 npm install
 npm run typecheck
-npm run v7check
+npm run v8check
 npm run intentcheck
 npm run build
 npm run dev
 ```
 
-V7 routes questions before researching them:
+V8 keeps the V7 routing model and adds a persistent product layer:
 
-1. **Finance / market** — resolve public company and ticker, pull primary SEC filings/XBRL facts, optionally add market quotes, then surface current catalysts.
-2. **Current / news** — prioritize recent reporting and freshness rather than encyclopedia history.
-3. **Reference / evergreen** — retain the V5/V6 verified knowledge + Wikipedia/Wikidata research path.
-4. **Coverage gaps** — stay explicit; no fabricated facts.
+1. **Intent-aware briefing** — finance/current/reference/general routing, source policy, freshness and perspective.
+2. **Iterative research foundation** — evaluate evidence gaps, then perform a bounded refinement pass for deep/current research.
+3. **Evidence inspection** — open a key fact to see exactly which eligible sources support it.
+4. **Contextual follow-ups** — follow-up questions carry the previous subject/evidence context rather than starting from zero.
+5. **Personal intelligence** — local follows work without a database; Postgres adds accounts, synced Brief Packs, read state and a change inbox.
+6. **Safer administration** — `/admin/*` is gated before server-rendered admin pages query internal data.
 
-### Optional market quote data
+### Production Postgres
 
-Set `ALPHA_VANTAGE_API_KEY` to activate the current quote adapter. Without it, a query such as `Apple stock` still returns an investor-focused SEC brief but explicitly states that live/delayed price data is not connected.
-
-### Postgres
+Set `DATABASE_URL`, then:
 
 ```bash
 npm run db:bootstrap
 ```
 
-When `DATABASE_URL` is configured, V7 also records query-intent observations, market snapshots and change candidates for later continuous intelligence.
+This activates persistent knowledge, research history, accounts, sessions, Brief Packs, conversation turns, read-state and notification generation.
 
-### Competitive prompt evaluation
+### Admin
 
-With the app running locally or deployed:
+Set a long random `ADMIN_TOKEN`. Visiting `/admin/*` redirects to `/admin/login`; a successful login creates a hashed HttpOnly admin session cookie. Mutation APIs continue to require their explicit authorization token.
+
+### Optional market data
+
+Set `ALPHA_VANTAGE_API_KEY` to activate the current quote adapter. Without it, finance Briefs still use SEC primary filings and clearly state that eligible quote data is missing.
+
+### Production evaluation
 
 ```bash
 $env:BRIEFS_EVAL_BASE_URL="https://your-briefs-domain.example"
-npm run eval:v7
+npm run eval:v8
 ```
 
-See `COMPETITIVE-BENCHMARK-V7.md`, `V7-BLUEPRINT.md`, and `SYSTEMS.md`.
+See `V8-BLUEPRINT.md`, `COMPETITIVE-BENCHMARK-V8.md`, and the non-negotiable `SYSTEMS.md` registry.

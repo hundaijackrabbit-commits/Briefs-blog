@@ -39,6 +39,15 @@ export interface EvidenceAssessment {
   score:number;
 }
 
+export interface BriefContextSnapshot {
+  conversationId?:string;
+  rootSubject:string;
+  priorQueries:string[];
+  entityHints:string[];
+  claimIds:string[];
+  sourceIds:string[];
+}
+
 export interface BriefRequest {
   subject:string;
   entityIds?:string[];
@@ -48,6 +57,7 @@ export interface BriefRequest {
   sourcePolicy?:"verified"|"primary-only"|"academic"|"news"|"all";
   freshnessRequirement?:"current"|"recent"|"historical";
   format?:"web"|"chat"|"email"|"audio"|"api";
+  context?:BriefContextSnapshot;
 }
 
 export interface BriefPlan {
@@ -82,4 +92,6 @@ export interface BriefResult {
   intent?:string;
   lens?:string;
   freshnessStatus?:"live"|"current"|"historical";
+  context?:BriefContextSnapshot;
+  comparison?:{subject:string;summary:string;factCount:number;sourceCount:number}[];
 }

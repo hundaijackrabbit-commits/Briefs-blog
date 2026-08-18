@@ -2,10 +2,10 @@ import type { BriefRequest } from "@/lib/types";
 import type { ResearchIntent, ResearchQueryPlan } from "@/lib/research/types";
 
 function splitComparison(subject:string){
+  const explicit=subject.match(/^compare\s+(.+?)\s+(?:vs\.?|versus|and|with)\s+(.+)$/i);
+  if(explicit) return [explicit[1].trim(),explicit[2].trim()];
   const vs=subject.split(/\s+(?:vs\.?|versus)\s+/i).map(x=>x.trim()).filter(Boolean);
-  if(vs.length===2) return vs;
-  const compare=subject.match(/^compare\s+(.+?)\s+(?:and|with)\s+(.+)$/i);
-  return compare?[compare[1].trim(),compare[2].trim()]:[subject.trim()];
+  return vs.length===2?vs:[subject.trim()];
 }
 
 function inferIntent(subject:string,parts:string[]):ResearchIntent{

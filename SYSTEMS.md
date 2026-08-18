@@ -9,8 +9,8 @@ This file is the non-negotiable scope ledger. No later release may silently dele
 - V4 — autonomous editorial foundation — complete/foundation
 - V5 — living knowledge MVP — complete/foundation
 - V6 — research & source-discovery engine — complete/foundation
-- V7 — query intelligence, finance routing & change-intelligence expansion — current
-- V8 — personal intelligence, accounts, packs & alerts — planned
+- V7 — query intelligence, finance routing & change-intelligence expansion — complete/foundation
+- V8 — personal intelligence, context, evidence inspection & security integration — current
 - V9 — authority/distribution: SEO, answer-engine visibility, feeds, audio, API — planned
 - V10 — production integration, scale, security, observability and product completion — planned
 
@@ -83,14 +83,14 @@ Patch releases such as V4.1 do not consume a major-version slot.
 - Perspective selector — operational; V7 automatically applies investor lens to finance queries unless explicitly overridden
 - Evidence list — V5 operational
 - Claim-level evidence counts — V6 operational foundation
-- Evidence drawer/claim-level inspection — V8 planned; V7 shows claim evidence counts + source links
+- Evidence drawer/claim-level inspection — V8 operational
 - Explicit knowledge cutoff — operational
 - Research-needed state — operational
 - Research request persistence — V5 foundation
-- Follow-up conversational context storage — V6 foundation; product conversation loop V8
-- Compare/query decomposition — V6 foundation; full entity comparison surface V8
+- Follow-up conversational context storage — V8 operational foundation; DB persistence when Postgres is configured
+- Compare/query decomposition — V6 foundation; V8 comparison surface operational foundation
 - “What changed?” — V7 operational foundation for finance/current queries; continuous maintenance continues through V8/V10
-- “Since I was here” — V8 planned
+- “Since I was here” — V8 operational foundation (local + DB-backed read state)
 - Read/listen/watch/export renderers — V9 planned
 
 ## Research & discovery
@@ -116,8 +116,8 @@ Patch releases such as V4.1 do not consume a major-version slot.
 - Market snapshot persistence — V7 operational when Postgres is configured
 - Change-candidate persistence — V7 operational when Postgres is configured
 - Competitive prompt evaluation harness — V7 operational
-- Emerging-topic detection — V8/V10
-- Velocity/trend engine — V8/V10
+- Emerging-topic detection — V10
+- Velocity/trend engine — V10
 - Briefs Signals — V9/V10
 - Proprietary indexes/datasets — V9/V10
 
@@ -134,13 +134,30 @@ Patch releases such as V4.1 do not consume a major-version slot.
 - Query evaluation/benchmark suite — V7 operational
 
 ## Personal intelligence
-- Accounts/preferences — V8
-- Follows/watchlists — V8
-- Brief Packs — V8
-- Reading state / since-last-visit — V8
-- Alerts and daily brief — V8
-- Finite “you’re caught up” experience — V8
+- Reader accounts — V8 operational when Postgres is configured
+- Password security (scrypt + per-password salt) — V8 operational
+- Opaque reader sessions / hashed token persistence — V8 operational
+- Reader preferences — V8 operational when Postgres is configured
+- Local-first follows — V8 operational without database
+- Synced follows/watchlists — V8 operational when Postgres is configured
+- Brief Packs — V8 operational when Postgres is configured
+- Reading state / since-last-visit — V8 operational foundation
+- Change inbox — V8 operational when Postgres is configured
+- Daily personal digest generation — V8 operational foundation; external email delivery V9
+- Finite “you’re caught up” experience — V8 operational
+- Conversation/turn persistence — V8 operational foundation
 - Pro tier/premium data controls — V9/V10
+
+## V8 integration & security
+- Admin UI authentication gate before server-rendered DB reads — V8 operational
+- Hashed HttpOnly admin session cookie — V8 operational
+- Personal query account scoping — V8 operational
+- Claim-level evidence inspection UI — V8 operational
+- Brief Context follow-up carry-forward — V8 operational foundation
+- Iterative research-gap evaluator — V8 operational foundation
+- Bounded second-pass refinement — V8 operational foundation
+- Comparison cards — V8 operational foundation
+- Personal change-notification generation integrated into daily run — V8 operational foundation
 
 ## Authority, distribution & product surfaces
 - Canonical public Brief URLs — foundation, V9 mature

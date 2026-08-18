@@ -8,5 +8,5 @@ export const metadata:Metadata={
 };
 
 export default function RootLayout({children}:{children:React.ReactNode}){
-  return <html lang="en"><body><div className="wrap"><header className="nav nav-minimal"><a className="brand" href="/">BRIEFS.</a></header>{children}</div></body></html>;
+  return <html lang="en"><body><div className="wrap"><header className="nav nav-minimal"><a className="brand" href="/">BRIEFS.</a><a className="nav-personal" href="/my-briefs">My Briefs</a></header>{children}</div></body></html>;
 }

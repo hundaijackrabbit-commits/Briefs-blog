@@ -16,6 +16,7 @@ export type KnowledgeBundle={
   subject:string; entityIds:string[]; description:string; whyItMatters:string; claims:KnowledgeClaim[];
   changes:KnowledgeChange[]; sources:KnowledgeSource[]; watchItems:string[]; knowledgeCutoff:string;
   researchNeeded:boolean; missingEvidence:string[]; mode:"database"|"starter"|"research"|"empty"; dynamic:boolean;
+  comparison?:{subject:string;summary:string;factCount:number;sourceCount:number}[];
 };
 
 function depthLimit(depth:BriefRequest["depth"]){return depth==="flash"?2:depth==="quick"?4:depth==="standard"?8:20;}
@@ -75,7 +76,8 @@ function researchBundle(graph:Awaited<ReturnType<typeof researchSubject>>,reques
     researchNeeded:!graph.sufficient||graph.missingEvidence.length>0,
     missingEvidence:graph.missingEvidence,
     mode:graph.sufficient?"research":"empty",
-    dynamic:graph.plan.freshness!=="historical"
+    dynamic:graph.plan.freshness!=="historical",
+    comparison:graph.comparison
   };
 }
 

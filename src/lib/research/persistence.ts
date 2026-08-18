@@ -17,6 +17,9 @@ export async function persistResearchGraph(graph:ResearchGraph){
       const evidenceIds=finding.sourceIds.map(id=>evidenceMap.get(id)).filter((id):id is string=>Boolean(id));
       await sql`insert into research_findings(run_id,finding_key,subject,predicate,value_text,statement,confidence,verification_status,evidence_ids,status) values(${runId}::uuid,${finding.id},${finding.subject},${finding.predicate},${finding.valueText},${finding.statement},${finding.confidence},${finding.verificationStatus},${evidenceIds}::uuid[],'staged') on conflict(run_id,finding_key) do nothing`;
     }
+    for(const item of graph.iterations||[]){
+      await sql`insert into research_iterations(run_id,iteration,gap_kind,reason,next_query) values(${runId}::uuid,${item.iteration},${item.gapKind},${item.reason},${item.nextQuery})`;
+    }
     return runId;
   }catch(error){
     console.error("Unable to persist V6 research graph",error);
