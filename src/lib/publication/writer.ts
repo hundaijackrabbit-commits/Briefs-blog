@@ -25,19 +25,29 @@ function meaningFor(audience:PublicationAudience,contract:StoryContract){
 }
 
 function deterministicDraft(graph:ResearchGraph,audience:PublicationAudience,category:string,contract:StoryContract):ArticleDraft{
-  const reader=readerContract(audience);const strongest=selectedFindings(graph,contract.strongestClaimIds);const counter=selectedFindings(graph,contract.counterClaimIds,0);const opening=paragraph(strongest,3)||sentence(graph.description)||`Briefs researched ${graph.canonicalSubject}, but the evidence is still too thin for a confident article.`;
-  const evidence=paragraph(strongest.slice(3),4)||paragraph(graph.findings.filter(f=>!contract.strongestClaimIds.includes(f.id)),4)||opening;
+  const strongest=selectedFindings(graph,contract.strongestClaimIds);const counter=selectedFindings(graph,contract.counterClaimIds,0);
+  const openingFindings=strongest.slice(0,3);const usedOpening=new Set(openingFindings.map(f=>f.id));
+  const evidenceFindings=(strongest.slice(3).length?strongest.slice(3):graph.findings.filter(f=>!usedOpening.has(f.id))).slice(0,4);
+  const opening=paragraph(openingFindings,3)||sentence(graph.description)||`Briefs researched ${graph.canonicalSubject}, but the evidence is still too thin for a confident article.`;
+  const evidence=paragraph(evidenceFindings,4)||"The evidence set is too narrow to add a second factual section without repeating the opening.";
   const uncertainty=graph.missingEvidence.length?`The important limit is what the evidence still cannot establish: ${graph.missingEvidence.slice(0,2).join(" ")}`:counter.length?`There is also evidence that complicates the clean version of the story. ${paragraph(counter,2)}`:"The current evidence set does not contain a material unresolved gap, but that does not turn interpretation into fact.";
-  const sections:ArticleSectionDraft[]=[
-    {key:"brief",heading:"The brief",body:opening,claimIds:strongest.slice(0,3).map(f=>f.id),purpose:"answer"},
-    {key:"evidence",heading:"What the evidence actually says",body:evidence,claimIds:strongest.slice(3).map(f=>f.id),purpose:"evidence"},
-    {key:"meaning",heading:"Why it matters",body:sentence(meaningFor(audience,contract)),claimIds:[],purpose:"analysis"},
-    {key:"limits",heading:"What would change the picture",body:sentence(uncertainty),claimIds:counter.map(f=>f.id),purpose:"watch"},
-    {key:"method",heading:"How Briefs reached this",body:`The article was composed from ${graph.findings.length} structured finding${graph.findings.length===1?"":"s"} across ${graph.sources.length} eligible source${graph.sources.length===1?"":"s"}. Source prose was not used as a writing template.`,claimIds:[],purpose:"method"}
-  ];
+  const meaning=sentence(meaningFor(audience,contract));
+  const method=`Briefs built this article from ${graph.findings.length} structured finding${graph.findings.length===1?"":"s"} across ${graph.sources.length} eligible source${graph.sources.length===1?"":"s"}. Source prose was not used as a writing template.`;
+  const answer:ArticleSectionDraft={key:"brief",heading:contract.angleKey==="strongest-fact"?"The detail":"The brief",body:opening,claimIds:openingFindings.map(f=>f.id),purpose:"answer"};
+  const evidenceSection:ArticleSectionDraft={key:"evidence",heading:contract.angleKey==="connection"?"The two pieces":"What the evidence actually says",body:evidence,claimIds:evidenceFindings.map(f=>f.id),purpose:evidenceFindings.length?"evidence":"analysis"};
+  const meaningSection:ArticleSectionDraft={key:"meaning",heading:contract.angleKey==="connection"?"The connection":contract.angleKey==="consequence"?"The consequence":"Why it matters",body:meaning,claimIds:[],purpose:"analysis"};
+  const limitsSection:ArticleSectionDraft={key:"limits",heading:contract.angleKey==="uncertainty"?"What we still don't know":"What would change the picture",body:sentence(uncertainty),claimIds:counter.map(f=>f.id),purpose:"watch"};
+  const methodSection:ArticleSectionDraft={key:"method",heading:"How Briefs reached this",body:method,claimIds:[],purpose:"method"};
+  let sections:ArticleSectionDraft[];
+  if(contract.angleKey==="uncertainty")sections=[answer,limitsSection,evidenceSection,meaningSection,methodSection];
+  else if(contract.angleKey==="connection")sections=[answer,evidenceSection,meaningSection,limitsSection,methodSection];
+  else if(contract.angleKey==="strongest-fact")sections=[answer,meaningSection,evidenceSection,limitsSection,methodSection];
+  else if(contract.angleKey==="consequence")sections=[answer,meaningSection,evidenceSection,limitsSection,methodSection];
+  else sections=[answer,evidenceSection,meaningSection,limitsSection,methodSection];
   const deck=sentence(contract.thesis).slice(0,280);
-  return {title:contract.angle,deck,category,audience,articleType:articleType(graph),sections,claimIds:[...new Set(sections.flatMap(s=>s.claimIds))],generatedBy:"briefs-deterministic"};
+  return {title:contract.angle,deck,category,audience,articleType:articleType(graph),sections,claimIds:[...new Set(sections.flatMap(section=>section.claimIds))],generatedBy:"briefs-deterministic"};
 }
+
 function validExternalDraft(value:unknown):value is ArticleDraft{if(!value||typeof value!=="object")return false;const d=value as Partial<ArticleDraft>;return typeof d.title==="string"&&typeof d.deck==="string"&&Array.isArray(d.sections)&&d.sections.every(s=>s&&typeof s.heading==="string"&&typeof s.body==="string"&&Array.isArray(s.claimIds));}
 
 export async function composePublicationArticle(graph:ResearchGraph,audience:PublicationAudience,category:string,contract:StoryContract):Promise<ArticleDraft>{

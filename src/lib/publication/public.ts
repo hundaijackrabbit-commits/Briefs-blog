@@ -45,6 +45,39 @@ export async function listPublishedArticles(limit = 60) {
   }
 }
 
+
+export type PublicFlagship = {
+  editorialDay:string;
+  subject:string;
+  category:string;
+  importanceScore:number;
+  distinctivenessScore:number;
+  finalScore:number;
+  materialChangeOverride:boolean;
+  regions:string[];
+  rationale:string[];
+  slug:string;
+  title:string;
+  deck:string;
+};
+
+export async function getLatestPublishedFlagship():Promise<PublicFlagship|null>{
+  if(!process.env.DATABASE_URL)return null;
+  try{
+    const sql=db();
+    const row=(await sql`
+      select f.editorial_day,f.subject,f.category,f.importance_score,f.distinctiveness_score,f.final_score,
+        f.material_change_override,f.regions,f.rationale,a.slug,a.title,a.deck
+      from publication_daily_flagships f
+      join publication_articles a on a.id=f.article_id and a.status='published'
+      where f.editorial_day=current_date
+      order by f.editorial_day desc limit 1
+    `)[0] as unknown as {editorial_day:string|Date;subject:string;category:string;importance_score:number;distinctiveness_score:number;final_score:number;material_change_override:boolean;regions:unknown;rationale:unknown;slug:string;title:string;deck:string}|undefined;
+    if(!row)return null;
+    return {editorialDay:new Date(row.editorial_day).toISOString().slice(0,10),subject:String(row.subject),category:String(row.category),importanceScore:Number(row.importance_score),distinctivenessScore:Number(row.distinctiveness_score),finalScore:Number(row.final_score),materialChangeOverride:Boolean(row.material_change_override),regions:Array.isArray(row.regions)?row.regions.map(String):[],rationale:Array.isArray(row.rationale)?row.rationale.map(String):[],slug:String(row.slug),title:String(row.title),deck:String(row.deck||"")};
+  }catch{return null;}
+}
+
 export async function getPublishedArticle(slug: string): Promise<PublicArticle | null> {
   if (!process.env.DATABASE_URL) return null;
   const safe = slug.toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 120);

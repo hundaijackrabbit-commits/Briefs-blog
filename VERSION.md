@@ -1,7 +1,9 @@
-# Briefs.blog 1.2.0 — Reader Intelligence & Editorial Refinement
+# Briefs.blog 1.2.1 — Global Editorial Refinement
 
-**Status:** Post-MVP refinement release.
+**Status:** Post-MVP Publication Engine refinement.
 
-V10.2 improves Brief answers and publication output without adding a new major roadmap version. It adds reader-goal inference, answer planning, reader-aware grounded composition, answer-quality scoring, multi-angle editorial planning, publication saturation penalties, Story Contracts, Audience Fit Grader 2, Briefs Voice 2, headline/specificity gates, and regression tooling.
+V10 remains the completed MVP architecture. V10.1 added the publication engine; V10.2 added Reader Intelligence and editorial refinement; Publication Engine 1.2.1 adds global daily flagship selection and 60-day distinctiveness.
 
-V1–V10 MVP systems and V10.1 Publication Engine systems remain preserved. This is not V11.
+The daily flagship now begins with the world, not a keyword list: global discovery → event clustering → geographic normalization → importance ranking → distinctiveness → deep research → existing V10.2 editorial gates.
+
+V1–V10 systems and V10.1/V10.2 systems remain preserved. This is not V11.

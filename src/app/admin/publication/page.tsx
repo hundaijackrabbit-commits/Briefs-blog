@@ -10,18 +10,23 @@ export default async function PublicationAdmin() {
   }
   const sql = db();
   try {
-    const [keywords, opportunities, articles, updates, queue, angles, quality] = await Promise.all([
+    const [keywords, opportunities, articles, updates, queue, angles, quality, globalFlagships, globalCandidates] = await Promise.all([
       sql`select * from publication_keywords order by active desc,created_at desc limit 100`,
       sql`select o.*,k.keyword,k.category from publication_opportunities o join publication_keywords k on k.id=o.keyword_id order by o.created_at desc limit 100`,
       sql`select id,slug,title,category,status,editorial_mode,freshness_status,quality_score,published_at,last_revalidated_at,updated_at from publication_articles order by created_at desc limit 100`,
       sql`select id,target_type,target_id,status,review_mode,summary,reason,created_at from publication_update_proposals where status in ('proposed','approved') order by created_at desc limit 100`,
       sql`select target_type,status,count(*)::int count from publication_revalidation_queue group by target_type,status order by target_type,status`,
       sql`select opportunity_id,angle_key,title,thesis,score,evidence_score,novelty_score,audience_score,risk_score,selected from publication_angle_candidates order by created_at desc,score desc limit 500`,
-      sql`select opportunity_id,article_id,total_score,audience_score,reader_goal_score,voice_score,headline_score,specificity_score,originality_score,passed,created_at from publication_quality_results order by created_at desc limit 150`
+      sql`select opportunity_id,article_id,total_score,audience_score,reader_goal_score,voice_score,headline_score,specificity_score,originality_score,passed,created_at from publication_quality_results order by created_at desc limit 150`,
+      sql`select f.*,a.slug,a.title article_title,a.status article_status from publication_daily_flagships f left join publication_articles a on a.id=f.article_id order by f.editorial_day desc limit 7`,
+      sql`select id,run_id,subject,research_query,category,regions,source_countries,source_families,mention_count,geographic_reach,human_consequence,economic_consequence,political_impact,long_term_consequence,surprise_velocity,public_attention,evidence_breadth,importance_score,distinctiveness_score,repeat_penalty,final_score,material_change_override,selected,status,rationale,created_at from publication_global_candidates where run_id=(select id from publication_global_runs order by started_at desc limit 1) order by selected desc,final_score desc limit 30`
     ]);
-    return <PublicationClient initial={{keywords:keywords as any[],opportunities:opportunities as any[],articles:articles as any[],updates:updates as any[],queue:queue as any[],angles:angles as any[],quality:quality as any[]}}/>;
+    return <PublicationClient initial={{
+      keywords:keywords as unknown as any[],opportunities:opportunities as unknown as any[],articles:articles as unknown as any[],updates:updates as unknown as any[],queue:queue as unknown as any[],angles:angles as unknown as any[],quality:quality as unknown as any[],
+      globalFlagship:(globalFlagships as unknown as any[])[0]||null,globalHistory:globalFlagships as unknown as any[],globalCandidates:globalCandidates as unknown as any[]
+    }}/>;
   } catch (error) {
     return <main className="section"><p className="eyebrow">BRIEFS · PUBLICATION ENGINE</p><h1>Publication desk</h1>
-      <section className="card"><h2>Migration required</h2><p>{error instanceof Error ? error.message : "Publication database unavailable"}</p><p className="muted">For V10.2, run <code>npm run refinement:db</code> after the V10.1 publication migration.</p></section></main>;
+      <section className="card"><h2>Migration required</h2><p>{error instanceof Error ? error.message : "Publication database unavailable"}</p><p className="muted">Run <code>npm run refinement:db</code> and then <code>npm run global:db</code> after the V10.1 publication migration.</p></section></main>;
   }
 }

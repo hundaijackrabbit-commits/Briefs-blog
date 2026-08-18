@@ -262,3 +262,20 @@ V10 closes the ten-version MVP roadmap. Future work is normal post-MVP iteration
 - Answer Quality Lab — operational foundation via V10.2 regression/evaluation harness
 - Provider-neutral structured answer and article writer contracts — operational interfaces; deterministic safe fallbacks remain available
 - V10.1 daily revalidation and update architecture remains preserved; V10.2 revisions preserve article meaning while improving reader/audience checks
+
+## Publication Engine 1.2.1 — Global Importance + Daily Distinctiveness
+- Global Event Discovery Engine — operational foundation; scans multiple world-news categories plus explicit regional sweeps before editorial selection
+- Geographic Normalization — operational; records region and source-country breadth so global importance is not inferred from North American attention alone
+- Global Event Clustering — operational; groups overlapping coverage into event candidates before scoring
+- Global Importance Engine — operational; scores geographic reach, human consequence, economic consequence, political/institutional impact, long-term consequence, surprise/velocity, public attention and evidence breadth
+- Daily Distinctiveness Engine — operational; compares each candidate with the prior 60 days of flagship selections and penalizes repeated event/entity/category territory
+- Material Change Override — operational; permits continued coverage of the same world event when the underlying world-state materially changes
+- Daily Flagship Ledger — operational; permanently records one editorial winner per UTC day, its rationale, scores, regions and links to research/article objects
+- Global Flagship Research Bridge — operational; the winner enters the existing V10.2 deep-research, story-angle, Story Contract, originality, audience, voice and evidence gates rather than bypassing them
+- Global Scope Rule — canonical; the daily question is “What is the single most consequential thing happening in the world today that an informed person should understand?” Popularity is a signal, not the editorial objective
+- Distinctiveness Rule — canonical; different by default, continuous only when reality genuinely changes
+- Hobby-safe Daily Automation — operational; one publication cron per day (18:30 UTC) performs global selection after much of the global news day has developed, then runs bounded publication maintenance
+
+- Autonomous Daily Article Exclusivity — operational; scheduled watched-keyword research creates opportunities but does not draft competing articles, reserving the automatic daily writing slot for the global flagship
+- Publishability Fallback — operational; if the highest-ranked world event fails deep research/article gates, up to two lower-ranked candidates may be attempted and the fallback reason is persisted
+- Angle-form Distinctiveness — operational; recent Story Contract angle keys are penalized and deterministic section structure varies by angle so daily differentiation is not only topical

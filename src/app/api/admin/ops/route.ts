@@ -11,5 +11,5 @@ async function allowed(req:NextRequest){
 }
 export async function GET(req:NextRequest){
   if(!(await allowed(req))) return NextResponse.json({error:"Unauthorized"},{status:401});
-  return NextResponse.json({version:"1.2.0",readiness:productionReadiness(),operations:await operationalSnapshot(),time:new Date().toISOString()},{headers:{"cache-control":"no-store"}});
+  return NextResponse.json({version:"1.2.1",readiness:productionReadiness(),operations:await operationalSnapshot(),time:new Date().toISOString()},{headers:{"cache-control":"no-store"}});
 }

@@ -4,6 +4,7 @@ import { ADMIN_COOKIE, validAdminCookie } from "@/lib/admin-session";
 import { draftOpportunity, publishArticle, researchKeyword } from "@/lib/publication/pipeline";
 import { applyArticleProposal, applyBriefProposal } from "@/lib/publication/revalidation";
 import { runPublicationWorker, schedulePublicationMaintenance } from "@/lib/publication/scheduler";
+import { runGlobalEditorialSelection } from "@/lib/publication/global-editorial";
 
 async function allowed(req: NextRequest) {
   const secret = process.env.ADMIN_TOKEN;
@@ -16,16 +17,18 @@ export async function GET(req: NextRequest) {
   if (!await allowed(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!process.env.DATABASE_URL) return NextResponse.json({ error: "DATABASE_URL is required" }, { status: 503 });
   const sql = db();
-  const [keywords, opportunities, articles, updates, queue, angles, quality] = await Promise.all([
+  const [keywords, opportunities, articles, updates, queue, angles, quality, globalFlagships, globalCandidates] = await Promise.all([
     sql`select * from publication_keywords order by active desc,created_at desc limit 100`,
     sql`select o.*,k.keyword,k.category from publication_opportunities o join publication_keywords k on k.id=o.keyword_id order by o.created_at desc limit 100`,
     sql`select id,slug,title,category,status,editorial_mode,freshness_status,quality_score,published_at,last_revalidated_at,updated_at from publication_articles order by created_at desc limit 100`,
     sql`select id,target_type,target_id,status,review_mode,summary,reason,created_at from publication_update_proposals order by created_at desc limit 100`,
     sql`select target_type,status,count(*)::int count from publication_revalidation_queue group by target_type,status order by target_type,status`,
     sql`select opportunity_id,angle_key,title,thesis,score,evidence_score,novelty_score,audience_score,risk_score,selected from publication_angle_candidates order by created_at desc,score desc limit 500`,
-    sql`select opportunity_id,article_id,total_score,audience_score,reader_goal_score,voice_score,headline_score,specificity_score,originality_score,passed,created_at from publication_quality_results order by created_at desc limit 150`
+    sql`select opportunity_id,article_id,total_score,audience_score,reader_goal_score,voice_score,headline_score,specificity_score,originality_score,passed,created_at from publication_quality_results order by created_at desc limit 150`,
+    sql`select f.*,a.slug,a.title article_title,a.status article_status from publication_daily_flagships f left join publication_articles a on a.id=f.article_id order by f.editorial_day desc limit 7`,
+    sql`select id,run_id,subject,research_query,category,regions,source_countries,source_families,mention_count,geographic_reach,human_consequence,economic_consequence,political_impact,long_term_consequence,surprise_velocity,public_attention,evidence_breadth,importance_score,distinctiveness_score,repeat_penalty,final_score,material_change_override,selected,status,rationale,created_at from publication_global_candidates where run_id=(select id from publication_global_runs order by started_at desc limit 1) order by selected desc,final_score desc limit 30`
   ]);
-  return NextResponse.json({ keywords, opportunities, articles, updates, queue, angles, quality });
+  return NextResponse.json({ keywords, opportunities, articles, updates, queue, angles, quality, globalFlagship:globalFlagships[0]||null, globalHistory:globalFlagships, globalCandidates });
 }
 
 export async function POST(req: NextRequest) {
@@ -36,6 +39,9 @@ export async function POST(req: NextRequest) {
   const sql = db();
 
   try {
+    if (body.action === "run-global-editorial") {
+      return NextResponse.json({ ok:true, result:await runGlobalEditorialSelection({force:Boolean(body.force),draft:body.draft!==false}) });
+    }
     if (body.action === "add-keyword") {
       const keyword = String(body.keyword || "").trim().slice(0, 160);
       if (!keyword) return NextResponse.json({ error: "keyword is required" }, { status: 400 });
@@ -43,11 +49,11 @@ export async function POST(req: NextRequest) {
       const audience = String(body.audience || "smart-generalist");
       const mode = ["auto","review","manual"].includes(String(body.mode)) ? String(body.mode) : "review";
       const rows = await sql`
-        insert into publication_keywords(keyword,category,audience_key,editorial_mode)
-        values(${keyword},${category},${audience},${mode})
+        insert into publication_keywords(keyword,category,audience_key,editorial_mode,system_owned)
+        values(${keyword},${category},${audience},${mode},false)
         on conflict(keyword) do update set
           category=excluded.category,audience_key=excluded.audience_key,editorial_mode=excluded.editorial_mode,
-          active=true,next_research_at=now(),updated_at=now()
+          system_owned=false,active=true,next_research_at=now(),updated_at=now()
         returning *
       `;
       return NextResponse.json({ ok: true, keyword: rows[0] });

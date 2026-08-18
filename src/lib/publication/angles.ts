@@ -16,10 +16,17 @@ async function recentTitles(){
 }
 
 function noveltyAgainst(title:string,recent:string[]){let max=0;for(const other of recent)max=Math.max(max,similarity(title,other));return clamp(100-max*90);}
+
+async function recentAngleKeys(){
+  if(!process.env.DATABASE_URL)return [] as string[];
+  try{const sql=db();const rows=await sql`select angle_key from publication_story_contracts order by created_at desc limit 20`;return (rows as unknown as Array<{angle_key:string}>).map(row=>String(row.angle_key));}catch{return [];}
+}
+function angleReusePenalty(key:string,recent:string[]){if(recent[0]===key)return 10;if(recent.slice(0,3).includes(key))return 7;const count=recent.filter(value=>value===key).length;return count>=3?5:count>=2?3:0;}
+
 function audienceBonus(text:string,audience:PublicationAudience){const lower=text.toLowerCase();const terms=audience==="investor"?["revenue","earnings","margin","guidance","valuation","risk","growth"]:audience==="executive"?["decision","risk","timing","cost","strategy","impact"]:audience==="developer"?["api","architecture","implementation","performance","security","model"]:audience==="marketer"?["audience","customer","market","brand","demand","position"]:audience==="student"?["why","how","cause","history","means","explained"]:["why","what changed","matters","evidence","means"];return clamp(72+Math.min(24,terms.filter(t=>lower.includes(t)).length*6));}
 
 export async function generateStoryAngles(graph:ResearchGraph,audience:PublicationAudience,keyword:string):Promise<StoryAngle[]>{
-  const subject=graph.canonicalSubject||keyword;const findings=topFindings(graph,6);const first=findings[0];const second=findings[1];const recent=await recentTitles();
+  const subject=graph.canonicalSubject||keyword;const findings=topFindings(graph,6);const first=findings[0];const second=findings[1];const recent=await recentTitles();const recentAngles=await recentAngleKeys();
   const candidates:Array<{key:string;title:string;thesis:string;claimIds:string[];risk:number}>=[];
   if(graph.plan.intent==="current"||graph.plan.freshness==="live")candidates.push({key:"change",title:`What actually changed in ${subject}`,thesis:first?`The most defensible way to understand the latest ${subject} update starts with ${readablePredicate(first.predicate).toLowerCase()}.`:`The latest ${subject} story is only worth publishing if the research identifies a material change.`,claimIds:findings.slice(0,4).map(f=>f.id),risk:32});
   if(first)candidates.push({key:"strongest-fact",title:`The ${readablePredicate(first.predicate)} detail that changes how to read ${subject}`,thesis:`A single well-supported fact can be more useful than a broad recap: ${first.valueText}.`,claimIds:[first.id,...findings.slice(1,3).map(f=>f.id)],risk:26});
@@ -31,7 +38,7 @@ export async function generateStoryAngles(graph:ResearchGraph,audience:Publicati
   const sourceFamilies=new Set(graph.sources.map(s=>s.independenceFamily||s.provider)).size;const evidenceBase=clamp(graph.findings.length*6+graph.sources.length*4+sourceFamilies*10+(graph.confidence==="high"?18:graph.confidence==="medium"?9:0));
   const contract=readerContract(audience);
   return candidates.map(c=>{
-    const novelty=noveltyAgainst(c.title,recent);const audienceScore=audienceBonus(`${c.title} ${c.thesis} ${contract.desiredOutcome}`,audience);const claimEvidence=c.claimIds.length?clamp(c.claimIds.map(id=>findings.find(f=>f.id===id)).filter(Boolean).reduce((sum,f)=>sum+claimStrength(f as ResearchFinding),0)/(c.claimIds.length*.48)):55;const evidence=clamp(evidenceBase*.65+claimEvidence*.35);const score=clamp(evidence*.34+novelty*.28+audienceScore*.22+(100-c.risk)*.16);
-    return {...c,score,evidenceScore:evidence,noveltyScore:novelty,audienceScore,riskScore:c.risk,rationale:[`evidence ${evidence}/100`,`novelty ${novelty}/100`,`audience fit ${audienceScore}/100`,`risk ${c.risk}/100`]};
+    const novelty=noveltyAgainst(c.title,recent);const audienceScore=audienceBonus(`${c.title} ${c.thesis} ${contract.desiredOutcome}`,audience);const claimEvidence=c.claimIds.length?clamp(c.claimIds.map(id=>findings.find(f=>f.id===id)).filter(Boolean).reduce((sum,f)=>sum+claimStrength(f as ResearchFinding),0)/(c.claimIds.length*.48)):55;const evidence=clamp(evidenceBase*.65+claimEvidence*.35);const reusePenalty=angleReusePenalty(c.key,recentAngles);const score=clamp(evidence*.34+novelty*.28+audienceScore*.22+(100-c.risk)*.16-reusePenalty);
+    return {...c,score,evidenceScore:evidence,noveltyScore:novelty,audienceScore,riskScore:c.risk,rationale:[`evidence ${evidence}/100`,`novelty ${novelty}/100`,`audience fit ${audienceScore}/100`,`risk ${c.risk}/100`,reusePenalty?`recent angle-form penalty -${reusePenalty}`:"angle form is fresh"]};
   }).sort((a,b)=>b.score-a.score).slice(0,5);
 }

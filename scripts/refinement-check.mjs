@@ -5,7 +5,7 @@ const required=["src/lib/reader/types.ts","src/lib/reader/model.ts","src/lib/rea
 const missing=required.filter(f=>!fs.existsSync(path.join(root,f))||fs.statSync(path.join(root,f)).size<40);if(missing.length){console.error("V10.2 missing/truncated files:",missing.join(", "));process.exit(1);}
 const pkg=JSON.parse(read("package.json"));const brief=read("src/lib/engine/brief-object.ts");const pipeline=read("src/lib/publication/pipeline.ts");const quality=read("src/lib/publication/quality.ts");const writer=read("src/lib/publication/writer.ts");const schema=read("db/schema.sql");const systems=read("SYSTEMS.md");
 const checks=[
- [pkg.version==="1.2.0","package version 1.2.0"],
+ [/^1\.2\./.test(pkg.version),"package remains on 1.2.x refinement line"],
  [brief.includes("inferReaderModel")&&brief.includes("buildAnswerPlan")&&brief.includes("composeReaderAnswer")&&brief.includes("evaluateAnswerQuality"),"Reader Model → Answer Plan → grounded composer → answer quality"],
  [pipeline.includes("generateStoryAngles")&&pipeline.includes("buildStoryContract")&&pipeline.includes("persistAngleCandidates"),"multi-angle editorial planning + story contract"],
  [quality.includes("evaluateAudienceFit")&&quality.includes("headlineScore")&&quality.includes("specificityScore"),"semantic audience/headline/specificity publication grading"],

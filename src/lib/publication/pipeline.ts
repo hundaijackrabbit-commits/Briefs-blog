@@ -10,14 +10,14 @@ import { createOpportunity,persistAngleCandidates,persistResearchSnapshot,persis
 
 function clamp(n:number){return Math.max(0,Math.min(100,Math.round(n)));}
 
-export async function researchKeyword(keywordId:string){
+export async function researchKeyword(keywordId:string,options:{draft?:boolean}={}){
   const sql=db();const row=(await sql`select id,keyword,category,audience_key,editorial_mode,min_sources,require_primary,freshness_hours,min_story_score from publication_keywords where id=${keywordId}::uuid and active=true`)[0] as any;if(!row)throw new Error("Publication keyword not found or inactive");
   const audience=String(row.audience_key) as PublicationAudience;const researched=await researchForPublication(String(row.keyword),audience,Number(row.freshness_hours));const snapshotId=await persistResearchSnapshot({keywordId,graph:researched.graph,primarySourceCount:researched.primarySourceCount,independentFamilies:researched.independentFamilies});
   const angles=await generateStoryAngles(researched.graph,audience,String(row.keyword));const best=angles[0];if(!best)throw new Error("Research did not produce a defensible editorial angle");const combinedStory=clamp(researched.opportunity.story*.58+best.score*.42);
   const opportunityId=await createOpportunity({keywordId,subject:researched.graph.canonicalSubject,angle:best.title,story:combinedStory,evidence:Math.round((researched.opportunity.evidence+best.evidenceScore)/2),novelty:Math.round((researched.opportunity.novelty+best.noveltyScore)/2),audience:best.audienceScore,freshness:researched.opportunity.freshness,rationale:[...researched.opportunity.rationale,...best.rationale,`selected angle ${best.key}`],snapshotId});
   await persistAngleCandidates({opportunityId,keywordId,snapshotId,angles});
   await sql`update publication_keywords set last_researched_at=now(),next_research_at=now()+(${Number(row.freshness_hours)}||' hours')::interval,updated_at=now() where id=${keywordId}::uuid`;
-  if(String(row.editorial_mode)!=="manual"&&combinedStory>=Number(row.min_story_score)){const draft=await draftOpportunity(opportunityId);return {opportunityId,angles:angles.map(a=>({title:a.title,score:a.score})),...draft};}
+  if(options.draft!==false&&String(row.editorial_mode)!=="manual"&&combinedStory>=Number(row.min_story_score)){const draft=await draftOpportunity(opportunityId);return {opportunityId,angles:angles.map(a=>({title:a.title,score:a.score})),...draft};}
   return {opportunityId,status:"candidate",storyScore:combinedStory,angles:angles.map(a=>({title:a.title,score:a.score}))};
 }
 
@@ -36,4 +36,4 @@ export async function draftOpportunity(opportunityId:string){
   const saved=await saveArticle({opportunityId,keyword:String(row.keyword),draft,graph,mode:String(row.editorial_mode) as EditorialMode,quality,primarySourceCount:primarySources,independentFamilies:families,autoPublish});return {status:saved.status,articleId:saved.articleId,slug:saved.slug,quality,storyContract};
 }
 
-export async function publishArticle(articleId:string){const sql=db();const row=(await sql`update publication_articles set status='published',published_at=coalesce(published_at,now()),last_substantial_update_at=coalesce(last_substantial_update_at,now()),updated_at=now() where id=${articleId}::uuid and status in ('draft','review') returning id,slug`)[0];if(!row)throw new Error("Article is not publishable");return {id:String(row.id),slug:String(row.slug)};}
+export async function publishArticle(articleId:string){const sql=db();const row=(await sql`update publication_articles set status='published',published_at=coalesce(published_at,now()),last_substantial_update_at=coalesce(last_substantial_update_at,now()),updated_at=now() where id=${articleId}::uuid and status in ('draft','review') returning id,slug`)[0];if(!row)throw new Error("Article is not publishable");try{await sql`update publication_daily_flagships set status='published',updated_at=now() where article_id=${articleId}::uuid`;}catch{/* Global editorial migration may not be installed yet. */}return {id:String(row.id),slug:String(row.slug)};}

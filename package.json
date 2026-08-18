@@ -1,13 +1,13 @@
 {
   "name": "briefs-blog",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "check": "npm run typecheck && npm run v4check && npm run v5check && npm run v6check && npm run v7check && npm run intentcheck && npm run v8check && npm run v9check && npm run v10check && npm run publication:check && npm run refinement:check",
+    "check": "npm run typecheck && npm run v4check && npm run v5check && npm run v6check && npm run v7check && npm run intentcheck && npm run v8check && npm run v9check && npm run v10check && npm run publication:check && npm run refinement:check && npm run global:check",
     "staticcheck": "node scripts/run-check.mjs scripts/static-check.py",
     "stabilize": "node scripts/run-check.mjs scripts/stabilization-check.py",
     "v4check": "node scripts/run-check.mjs scripts/v4-check.py",
@@ -28,7 +28,9 @@
     "publication:db": "node scripts/publication-db.mjs",
     "refinement:check": "node scripts/refinement-check.mjs",
     "refinement:db": "node scripts/refinement-db.mjs",
-    "eval:v10.2": "node scripts/refinement-eval.mjs"
+    "eval:v10.2": "node scripts/refinement-eval.mjs",
+    "global:check": "node scripts/global-editorial-check.mjs",
+    "global:db": "node scripts/global-editorial-db.mjs"
   },
   "dependencies": {
     "next": "16.2.2",

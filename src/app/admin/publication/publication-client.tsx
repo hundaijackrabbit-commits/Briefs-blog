@@ -2,7 +2,7 @@
 
 import { ChangeEvent, FormEvent, useMemo, useState } from "react";
 
-type Props = { initial: { keywords:any[]; opportunities:any[]; articles:any[]; updates:any[]; queue:any[]; angles:any[]; quality:any[]; }; };
+type Props = { initial: { keywords:any[]; opportunities:any[]; articles:any[]; updates:any[]; queue:any[]; angles:any[]; quality:any[]; globalFlagship:any|null; globalHistory:any[]; globalCandidates:any[]; }; };
 
 export default function PublicationClient({ initial }: Props) {
   const [busy,setBusy]=useState("");const [message,setMessage]=useState("");const [keyword,setKeyword]=useState("");const [category,setCategory]=useState("Technology");const [audience,setAudience]=useState("smart-generalist");const [mode,setMode]=useState("review");
@@ -13,9 +13,16 @@ export default function PublicationClient({ initial }: Props) {
   function addKeyword(e:FormEvent){e.preventDefault();void action("add-keyword",undefined,{keyword,category,audience,mode});}
 
   return <main className="section">
-    <p className="eyebrow">BRIEFS · PUBLICATION ENGINE 1.2</p><h1>Publication desk</h1>
-    <p className="lede">Keywords trigger investigation. V10.2 now ranks multiple evidence-bounded angles, locks a Story Contract, then evaluates grounding, originality, reader fit, voice, headline support and specificity before publication.</p>
+    <p className="eyebrow">BRIEFS · PUBLICATION ENGINE 1.2.1</p><h1>Publication desk</h1>
+    <p className="lede">The desk combines V10.2 reader/editorial refinement with a global daily flagship: Briefs ranks the world first, then sends the winner through deep research, competing story angles, Story Contract, grounding, originality, reader fit, voice and evidence gates.</p>
     {message&&<div className="card"><strong>{message}</strong></div>}
+
+    <section className="card">
+      <div className="brief-result-head"><div><p className="eyebrow">GLOBAL DESK</p><h2>Today's flagship decision</h2></div><button onClick={()=>action("run-global-editorial",undefined,{force:false,draft:true})} disabled={Boolean(busy)}>Run world selection</button></div>
+      <p className="muted">Editorial question: What is the single most consequential thing happening in the world today that an informed person should understand?</p>
+      {initial.globalFlagship?<div><p className="eyebrow">{String(initial.globalFlagship.category).toUpperCase()} · {String(initial.globalFlagship.status).toUpperCase()}</p><h3>{initial.globalFlagship.subject}</h3><p>Final {initial.globalFlagship.final_score}/100 · importance {initial.globalFlagship.importance_score}/100 · distinctiveness {initial.globalFlagship.distinctiveness_score}/100</p><p>Coverage: {initial.globalFlagship.mention_count} clustered reports · {initial.globalFlagship.source_family_count} source families · {(Array.isArray(initial.globalFlagship.regions)?initial.globalFlagship.regions:[]).join(" · ")||"global"}</p>{initial.globalFlagship.material_change_override&&<p><strong>Material-change override:</strong> continued coverage is allowed because the underlying world-state changed.</p>}{initial.globalFlagship.slug&&<p><a href={`/articles/${initial.globalFlagship.slug}`} target="_blank">View flagship article →</a></p>}<p><button onClick={()=>action("run-global-editorial",undefined,{force:true,draft:true})} disabled={Boolean(busy)}>Force fresh selection</button></p></div>:<p>No global flagship has been selected yet.</p>}
+      {initial.globalCandidates.length>0&&<details><summary>Inspect today's ranked world candidates</summary><div className="brief-list">{initial.globalCandidates.slice(0,12).map(c=><div key={c.id}><strong>{c.selected?"✓ ":""}{c.subject}</strong><span>{c.category} · final {c.final_score} · importance {c.importance_score} · distinctiveness {c.distinctiveness_score} · repeat penalty {c.repeat_penalty}</span><small>reach {c.geographic_reach} · human {c.human_consequence} · economic {c.economic_consequence} · political {c.political_impact} · long-term {c.long_term_consequence} · evidence {c.evidence_breadth}</small></div>)}</div></details>}
+    </section>
 
     <section className="card"><h2>Watch a keyword</h2><form onSubmit={addKeyword}><p><input value={keyword} onChange={(e:ChangeEvent<HTMLInputElement>)=>setKeyword(e.target.value)} placeholder="AI agents, Apple services, private credit…" required /></p><p>
       <label>Category <input value={category} onChange={(e:ChangeEvent<HTMLInputElement>)=>setCategory(e.target.value)} /></label>{" "}

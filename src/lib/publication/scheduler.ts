@@ -97,7 +97,7 @@ export async function runPublicationWorker(maxItems = 8, budgetMs = 35_000) {
     if (!item) break;
     try {
       const result = item.target_type === "keyword"
-        ? await researchKeyword(String(item.target_id))
+        ? await researchKeyword(String(item.target_id),{draft:false})
         : item.target_type === "article"
           ? await revalidateArticle(String(item.target_id))
           : await revalidateBrief(String(item.target_id));
