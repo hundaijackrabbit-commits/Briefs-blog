@@ -5,10 +5,11 @@ import { readerContract } from "@/lib/publication/audience";
 function clean(value:string){return value.replace(/\s+/g," ").trim();}
 function sentence(value:string){const c=clean(value);return c?c.replace(/[.!?]+$/g,"")+".":"";}
 function articleType(graph:ResearchGraph):ArticleDraft["articleType"]{return graph.plan.intent==="current"||graph.plan.freshness==="live"?"briefing":graph.plan.intent==="history"||graph.plan.intent==="explain"?"explainer":"analysis";}
+function quoteFragment(value:string,maxWords=12){const words=clean(value).split(/\s+/).filter(Boolean);const clipped=words.slice(0,maxWords).join(" ");return {text:clipped,truncated:words.length>maxWords};}
 function claimSentence(f:ResearchFinding,index:number){
-  const statement=clean(f.statement||"");
+  const statement=clean(f.statement||"");const p=f.predicate.replace(/[_-]+/g," ").trim();const v=clean(f.valueText);const sourceProse=/^(recent reporting|external context)$/i.test(p)||statement.split(/\s+/).length>16||v.split(/\s+/).length>16;
+  if(sourceProse){const q=quoteFragment(statement||v);return sentence(`One source finding is summarized as “${q.text}${q.truncated?"…":""}”`);}
   if(statement&&statement.toLowerCase()!==`${f.predicate}: ${f.valueText}`.toLowerCase())return sentence(statement);
-  const p=f.predicate.replace(/[_-]+/g," ").trim();const v=clean(f.valueText);
   if(index%3===0)return sentence(`${v} is the figure attached to ${p.toLowerCase()}`);
   if(index%3===1)return sentence(`On ${p.toLowerCase()}, the evidence points to ${v}`);
   return sentence(`${p.charAt(0).toUpperCase()+p.slice(1)} comes in at ${v}`);

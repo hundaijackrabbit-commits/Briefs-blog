@@ -4,6 +4,7 @@ import { dedupeSources,rankDiscoveredUrl,sourceDiversity } from "@/lib/research/
 import { wikipediaProvider } from "@/lib/research/providers/wikipedia";
 import { wikidataProvider } from "@/lib/research/providers/wikidata";
 import { gdeltProvider } from "@/lib/research/providers/gdelt";
+import { googleNewsProvider } from "@/lib/research/providers/google-news";
 import { openAlexProvider } from "@/lib/research/providers/openalex";
 import { researchDiscoveredPages } from "@/lib/research/providers/web-page";
 import { evaluateResearchGaps,shouldIterate } from "@/lib/research/iteration";
@@ -40,7 +41,7 @@ function maxIterations(request:BriefRequest){return request.depth==="research"?4
 
 async function runSubject(subject:string,request:BriefRequest){
   const plan=decomposeResearchRequest({...request,subject});
-  const providers:ResearchProvider[]=plan.intent==="current"?[gdeltProvider,...referenceProviders]:academicRequest(request)?[openAlexProvider,...referenceProviders]:referenceProviders;
+  const providers:ResearchProvider[]=plan.intent==="current"?[googleNewsProvider,gdeltProvider,...referenceProviders]:academicRequest(request)?[openAlexProvider,...referenceProviders]:referenceProviders;
   const settled=await Promise.allSettled(providers.map(provider=>runProvider(provider,subject,plan)));
   const canonical:string[]=[];const descriptions:string[]=[];const findings:ResearchFinding[]=[];const sources:ResearchSource[]=[];const discovered:string[]=[];
   for(const result of settled){if(result.status!=="fulfilled")continue;if(result.value.canonicalSubject)canonical.push(result.value.canonicalSubject);if(result.value.description)descriptions.push(result.value.description);findings.push(...result.value.findings);sources.push(...result.value.sources);discovered.push(...(result.value.discoveredUrls||[]));}
@@ -62,7 +63,7 @@ function cutoffFrom(sources:ResearchSource[],fallback:string){
 
 export async function researchSubject(request:BriefRequest):Promise<ResearchGraph>{
   const started=Date.now();const plan=decomposeResearchRequest(request);
-  const key=`${plan.normalized.toLowerCase()}|${request.depth}|${request.perspective}|${request.sourcePolicy||"verified"}|${request.freshnessRequirement||"current"}`;
+  const key=`research-rss-v2|${plan.normalized.toLowerCase()}|${request.depth}|${request.perspective}|${request.sourcePolicy||"verified"}|${request.freshnessRequirement||"current"}`;
   const cached=memoryCache.get(key);if(cached&&cached.expires>Date.now())return cached.graph;
   const durable=await loadResearchMemory(key);if(durable){memoryCache.set(key,{expires:Date.now()+cacheTtl(plan),graph:{...durable,persisted:true}});return {...durable,persisted:true};}
 
@@ -83,8 +84,11 @@ export async function researchSubject(request:BriefRequest):Promise<ResearchGrap
     if((academicRequest(request)||request.sourcePolicy==="academic")&&addedSources.length===0){
       const result=await runProvider(openAlexProvider,plan.subjects[0],plan).catch(()=>null);if(result){addedSources.push(...result.sources);addedFindings.push(...result.findings);discovered.push(...(result.discoveredUrls||[]));nextQuery=`${plan.subjects[0]} scholarly evidence`;}
     }
-    if(plan.intent==="current"&&(gap.kind==="freshness"||addedSources.length===0)){
-      const refined=iteration===2?`${plan.subjects[0]} latest update`:`${plan.subjects[0]} latest developments`;const result=await runProvider(gdeltProvider,refined,{...plan,original:refined,normalized:refined,subjects:[refined],intent:"current"}).catch(()=>null);if(result){addedSources.push(...result.sources);addedFindings.push(...result.findings);discovered.push(...(result.discoveredUrls||[]));nextQuery=refined;}
+    if(plan.intent==="current"&&(gap.kind==="freshness"||gap.kind==="independence"||gap.kind==="coverage"||addedSources.length===0)){
+      const refined=iteration===2?`${plan.subjects[0]} latest update`:`${plan.subjects[0]} latest developments`;
+      const rss=await runProvider(googleNewsProvider,refined,{...plan,original:refined,normalized:refined,subjects:[refined],intent:"current"}).catch(()=>null);
+      if(rss){addedSources.push(...rss.sources);addedFindings.push(...rss.findings);discovered.push(...(rss.discoveredUrls||[]));nextQuery=`${refined} via Google News RSS`;}
+      if(addedSources.length===0){const result=await runProvider(gdeltProvider,refined,{...plan,original:refined,normalized:refined,subjects:[refined],intent:"current"}).catch(()=>null);if(result){addedSources.push(...result.sources);addedFindings.push(...result.findings);discovered.push(...(result.discoveredUrls||[]));nextQuery=refined;}}
     }
     const primary=subjectResults[0];
     if(addedSources.length===0&&plan.subjects.length===1&&primary?.canonical&&primary.canonical.toLowerCase()!==plan.subjects[0].toLowerCase()&&!tried.has(primary.canonical.toLowerCase())){
