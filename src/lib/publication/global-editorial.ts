@@ -124,12 +124,15 @@ export async function runGlobalEditorialSelection(options:{force?:boolean;draft?
   const prior=await existingFlagship(day);
   if(prior&&!options.force)return {status:"already-selected",editorialDay:day,subject:prior.subject,category:prior.category as DailyFlagshipResult["category"],finalScore:Number(prior.final_score),opportunityId:prior.opportunity_id||undefined,articleId:prior.article_id||undefined,articleStatus:prior.article_status||prior.status};
 
-  const lockKey=`briefs:global-editorial:${day}`;
-  const locked=(await sql`select pg_try_advisory_lock(hashtext(${lockKey})) ok`)[0]?.ok;
-  if(!locked)return {status:"already-selected",editorialDay:day,reason:"Global editorial selection is already running"};
+  // Transaction-scoped advisory lock: safe with pooled/serverless Postgres.
+  // v2 namespace intentionally bypasses any stranded session lock created by the old implementation.
+  const lockKey=`briefs:global-editorial:v2:${day}`;
+  return await sql.begin(async tx=>{
+    const locked=(await tx`select pg_try_advisory_xact_lock(hashtext(${lockKey})) ok`)[0]?.ok;
+    if(!locked)return {status:"already-selected",editorialDay:day,reason:"Global editorial selection is already running"};
 
-  let runId:string|undefined;
-  try{
+    let runId:string|undefined;
+    try{
     const run=(await sql`insert into publication_global_runs(editorial_day,status) values(${day}::date,'running') returning id`)[0];
     runId=String(run.id);
 
@@ -183,12 +186,11 @@ export async function runGlobalEditorialSelection(options:{force?:boolean;draft?
     await sql`update publication_daily_flagships set status='research-required',updated_at=now() where editorial_day=${day}::date`;
     await sql`update publication_global_runs set status='selected',selected_candidate_id=${firstId}::uuid,completed_at=now() where id=${runId}::uuid`;
     return {...(lastFailure||{status:"research-required",editorialDay:day}),candidateId:firstId,subject:first.subject,category:first.category,finalScore:first.finalScore,reason:lastFailure?.reason||"No shortlisted candidate passed the deep-research/article gates"};
-  }catch(error){
-    if(runId)await sql`update publication_global_runs set status='failed',error_summary=${error instanceof Error?error.message:String(error)},completed_at=now() where id=${runId}::uuid`;
-    throw error;
-  }finally{
-    await sql`select pg_advisory_unlock(hashtext(${lockKey}))`;
-  }
+    }catch(error){
+      if(runId)await sql`update publication_global_runs set status='failed',error_summary=${error instanceof Error?error.message:String(error)},completed_at=now() where id=${runId}::uuid`;
+      throw error;
+    }
+  });
 }
 
 export async function latestGlobalEditorialState(){

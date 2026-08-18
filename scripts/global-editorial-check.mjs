@@ -11,6 +11,7 @@ const checks=[
   [scoring.includes("geographicReach*.20")&&scoring.includes("humanConsequence*.18")&&scoring.includes("longTermConsequence*.12"),"global importance weighted scoring contract"],
   [distinct.includes("current_date-60")&&distinct.includes("materialChange")&&distinct.includes("repeatPenalty"),"60-day daily distinctiveness with material-change override"],
   [editorial.includes("publication_daily_flagships")&&editorial.includes("researchKeyword")&&editorial.includes("system_owned")&&editorial.includes("publishability fallback"),"daily winner persists, deep-researches, and can fall back only when higher-ranked stories fail evidence gates"],
+  [editorial.includes("pg_try_advisory_xact_lock")&&!editorial.includes("pg_advisory_unlock"),"global editorial lock is transaction-scoped and pool-safe"],
   [scheduler.includes("researchKeyword(String(item.target_id),{draft:false})"),"watched-keyword cron research cannot create competing autonomous daily articles"],
   [angles.includes("angleReusePenalty")&&writer.includes("contract.angleKey"),"daily distinctiveness extends into story-angle reuse and deterministic article structure"],
   [cron.includes("runGlobalEditorialSelection")&&cron.includes("runPublicationWorker(3,8_000)"),"Hobby-safe daily publication cron integrates bounded flagship generation"],
