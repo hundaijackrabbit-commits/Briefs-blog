@@ -12,7 +12,7 @@ function readablePredicate(value:string){return value.replace(/[_-]+/g," ").repl
 
 async function recentTitles(){
   if(!process.env.DATABASE_URL)return [] as string[];
-  try{const sql=db();const rows=await sql`select title from publication_articles where status in ('review','published') order by created_at desc limit 250`;return (rows as Array<{title:string}>).map(r=>String(r.title));}catch{return [];}
+  try{const sql=db();const rows=await sql`select title from publication_articles where status in ('review','published') order by created_at desc limit 250`;return (rows as unknown as Array<{title:string}>).map(r=>String(r.title));}catch{return [];}
 }
 
 function noveltyAgainst(title:string,recent:string[]){let max=0;for(const other of recent)max=Math.max(max,similarity(title,other));return clamp(100-max*90);}

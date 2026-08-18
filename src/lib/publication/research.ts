@@ -14,7 +14,7 @@ async function libraryCompetition(subject:string){
   try{
     const sql=db();const rows=await sql`select title,primary_keyword,published_at,created_at from publication_articles where status in ('review','published') order by created_at desc limit 400`;
     let highest=0;let closeRecent=0;const cutoff=Date.now()-30*86400000;
-    for(const row of rows as Array<{title:string;primary_keyword:string;published_at:string|null;created_at:string}>){const sim=titleSimilarity(subject,`${row.title} ${row.primary_keyword}`);highest=Math.max(highest,sim);const when=Date.parse(row.published_at||row.created_at);if(sim>.42&&when>=cutoff)closeRecent++;}
+    for(const row of rows as unknown as Array<{title:string;primary_keyword:string;published_at:string|null;created_at:string}>){const sim=titleSimilarity(subject,`${row.title} ${row.primary_keyword}`);highest=Math.max(highest,sim);const when=Date.parse(row.published_at||row.created_at);if(sim>.42&&when>=cutoff)closeRecent++;}
     return {novelty:Math.max(12,Math.round(100-highest*88)),saturationPenalty:Math.min(24,closeRecent*6)};
   }catch{return {novelty:75,saturationPenalty:0};}
 }

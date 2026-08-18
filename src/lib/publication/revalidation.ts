@@ -92,7 +92,7 @@ export async function revalidateArticle(articleId: string) {
     select claim_id,predicate,value_text
     from publication_article_claims
     where article_id=${articleId}::uuid
-  ` as Array<{ claim_id: string; predicate: string; value_text: string }>;
+  ` as unknown as Array<{ claim_id: string; predicate: string; value_text: string }>;
 
   const researched = await researchForPublication(String(article.primary_keyword), String(article.audience_key), 24);
   const graph = researched.graph;
@@ -134,7 +134,7 @@ export async function revalidateArticle(articleId: string) {
     from publication_article_sections
     where article_id=${articleId}::uuid
     order by display_order
-  ` as Array<{ section_key: string; heading: string; body: string; claim_ids: unknown }>;
+  ` as unknown as Array<{ section_key: string; heading: string; body: string; claim_ids: unknown }>;
 
   const affectedKeys = new Set<string>();
   for (const section of sections) {
@@ -236,7 +236,7 @@ export async function revalidateBrief(briefId: string) {
     from brief_claims bc
     join claims c on c.id=bc.claim_id
     where bc.brief_id=${briefId}::uuid and c.verification_status<>'retracted'
-  ` as Array<{ claim_id: string; predicate: string; value_text: string }>;
+  ` as unknown as Array<{ claim_id: string; predicate: string; value_text: string }>;
 
   const researched = await researchForPublication(String(brief.title), "smart-generalist", 24);
   const graph = researched.graph;
@@ -570,7 +570,7 @@ export async function applyBriefProposal(proposalId: string) {
       values(${briefId}::uuid,${nextClaimId}::uuid,${Number(briefLink?.display_order || 0)})
       on conflict do nothing
     `;
-    for (const link of sectionLinks as Array<{section_id:string;dependency_type:string}>) {
+    for (const link of sectionLinks as unknown as Array<{section_id:string;dependency_type:string}>) {
       await sql`
         delete from brief_section_claims
         where section_id=${String(link.section_id)}::uuid and claim_id=${change.oldClaimId}::uuid
