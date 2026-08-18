@@ -10,8 +10,8 @@ This file is the non-negotiable scope ledger. No later release may silently dele
 - V5 — living knowledge MVP — complete/foundation
 - V6 — research & source-discovery engine — complete/foundation
 - V7 — query intelligence, finance routing & change-intelligence expansion — complete/foundation
-- V8 — personal intelligence, context, evidence inspection & security integration — current
-- V9 — authority/distribution: SEO, answer-engine visibility, feeds, audio, API — planned
+- V8 — personal intelligence, context, evidence inspection & security integration — complete/foundation
+- V9 — authority/distribution: SEO, answer-engine visibility, feeds, listen, email, API & exports — current
 - V10 — production integration, scale, security, observability and product completion — planned
 
 Patch releases such as V4.1 do not consume a major-version slot.
@@ -91,7 +91,7 @@ Patch releases such as V4.1 do not consume a major-version slot.
 - Compare/query decomposition — V6 foundation; V8 comparison surface operational foundation
 - “What changed?” — V7 operational foundation for finance/current queries; continuous maintenance continues through V8/V10
 - “Since I was here” — V8 operational foundation (local + DB-backed read state)
-- Read/listen/watch/export renderers — V9 planned
+- Read/listen/export renderers — V9 operational foundation; watch/video renderer remains V10
 
 ## Research & discovery
 - Question decomposition — V6 operational foundation
@@ -118,8 +118,8 @@ Patch releases such as V4.1 do not consume a major-version slot.
 - Competitive prompt evaluation harness — V7 operational
 - Emerging-topic detection — V10
 - Velocity/trend engine — V10
-- Briefs Signals — V9/V10
-- Proprietary indexes/datasets — V9/V10
+- Briefs Signals — V10 planned
+- Proprietary indexes/datasets — V10 planned
 
 ## Query intelligence & domain routing
 - Query Intent Engine — V7 operational
@@ -143,10 +143,10 @@ Patch releases such as V4.1 do not consume a major-version slot.
 - Brief Packs — V8 operational when Postgres is configured
 - Reading state / since-last-visit — V8 operational foundation
 - Change inbox — V8 operational when Postgres is configured
-- Daily personal digest generation — V8 operational foundation; external email delivery V9
+- Daily personal digest generation — V8 operational foundation; V9 optional external email delivery operational
 - Finite “you’re caught up” experience — V8 operational
 - Conversation/turn persistence — V8 operational foundation
-- Pro tier/premium data controls — V9/V10
+- Pro tier/premium data controls — V10 planned
 
 ## V8 integration & security
 - Admin UI authentication gate before server-rendered DB reads — V8 operational
@@ -160,12 +160,34 @@ Patch releases such as V4.1 do not consume a major-version slot.
 - Personal change-notification generation integrated into daily run — V8 operational foundation
 
 ## Authority, distribution & product surfaces
-- Canonical public Brief URLs — foundation, V9 mature
-- Structured data / citations / provenance — V9
-- SEO and answer-engine readiness — V9
-- RSS/news feeds/sitemaps — V9
-- Email briefings — V8/V9
-- Audio/watch renderers — V9
-- Briefs API / exports — V9
+- Canonical public Brief URLs — V9 operational
+- Structured data / citations / provenance — V9 operational foundation
+- SEO and answer-engine readiness — V9 operational foundation
+- RSS/news feeds/sitemaps — V9 operational
+- Email briefings — V9 operational when email provider is configured
+- Browser listen renderer — V9 operational; generated audio/watch media — V10
+- Briefs public API v1 / Markdown, CSV, JSON exports — V9 operational foundation
 - Enterprise/team workspaces — V10
 - Security hardening, auditability and scale testing — V10
+
+## V9 authority & distribution
+- Public Brief index — operational
+- Canonical public Brief renderer — operational
+- Per-Brief dynamic metadata / canonical URLs — operational
+- Article + breadcrumb JSON-LD — operational
+- Organization + WebSite/SearchAction structured data — operational
+- Claim-level public evidence links — operational
+- Public methodology/trust page — operational
+- App Router sitemap + robots metadata routes — operational
+- RSS feed — operational
+- News sitemap — operational for recent database-backed published Briefs
+- llms.txt discoverability resource — operational informational surface
+- Public API v1 — operational foundation with rate limiting
+- Markdown / CSV / JSON exports — operational
+- Browser speech-synthesis listen mode — operational foundation
+- Digest email delivery adapter — operational when Resend credentials are configured
+- Distribution delivery audit table — operational foundation
+- Public API observation table — operational foundation
+- Developer documentation surface — operational
+- Ephemeral query/personal surfaces marked noindex — operational
+- Dynamic social preview image — operational foundation

@@ -3,6 +3,7 @@ import { collectSource, dueSources, persistDocuments } from "@/lib/engine/source
 import { enqueue, recoverStale } from "@/lib/engine/queue";
 import { processOne } from "@/lib/engine/worker";
 import { runPersonalDigest } from "@/lib/personal/digest";
+import { deliverPendingDigestEmails } from "@/lib/distribution/email-delivery";
 
 export async function runDailyEngine(){
   const sql=db();
@@ -24,8 +25,9 @@ export async function runDailyEngine(){
     const workerId=`daily-${runId}`; let jobsProcessed=0;
     for(let i=0;i<25;i++){const r=await processOne(workerId);if(r.status==='idle')break;jobsProcessed++;}
     const personal=await runPersonalDigest().catch(()=>({status:"failed",accounts:0,notifications:0}));
+    const email=await deliverPendingDigestEmails().catch(()=>({status:"failed",accounts:0,delivered:0,failed:1}));
     await sql`update intelligence_runs set sources_attempted=${sources.length},sources_failed=${failed},documents_collected=${docs},status=${failed===sources.length&&sources.length>0?'partial':'completed'},completed_at=now() where id=${runId}::uuid`;
-    return {status:failed?"partial":"completed",runId,sources:sources.length,failed,documents:docs,jobsProcessed,personal};
+    return {status:failed?"partial":"completed",runId,sources:sources.length,failed,documents:docs,jobsProcessed,personal,email};
   }catch(e){
     if(runId) await sql`update intelligence_runs set status='failed',completed_at=now(),error_summary=${e instanceof Error?e.message:String(e)} where id=${runId}::uuid`;
     throw e;

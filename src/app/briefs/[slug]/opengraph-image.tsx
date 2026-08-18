@@ -1,0 +1,4 @@
+import { ImageResponse } from "next/og";
+import { getPublicBrief } from "@/lib/distribution/public-brief";
+export const size={width:1200,height:630}; export const contentType="image/png"; export const runtime="nodejs";
+export default async function Image({params}:{params:Promise<{slug:string}>}){const {slug}=await params;const brief=await getPublicBrief(slug);const title=brief?.title||"Briefs";return new ImageResponse(<div style={{width:"100%",height:"100%",display:"flex",flexDirection:"column",justifyContent:"space-between",background:"#f4f0e8",color:"#111",padding:"72px",fontFamily:"Arial"}}><div style={{fontSize:30,letterSpacing:"0.12em"}}>BRIEFS.</div><div style={{fontSize:76,fontWeight:700,maxWidth:"1000px",lineHeight:1.04}}>{title}</div><div style={{fontSize:26}}>Living knowledge · evidence · freshness</div></div>,size);}

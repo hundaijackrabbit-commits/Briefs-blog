@@ -1,32 +1,7 @@
-# V8 validation
+# Briefs validation
 
-Validation performed for the V8 Personal Intelligence, Context & Evidence Inspection package:
-
-- `package.json` + `tsconfig.json` JSON parse — pass
-- V8 architecture registry check (`node scripts/v8-check.mjs`) — pass
-- V7 architecture preservation check — pass
-- V6 research-engine preservation check — pass
-- V5 living-knowledge preservation check — pass
-- legacy static repository check — pass
-- V4 stabilization check — pass
-- V4 architecture check — pass with the expected version warning
-- TypeScript project-code compile with temporary offline dependency shims — pass
-- temporary validation shims removed after compile
-- admin-page authentication gate present before server-rendered `/admin/*` database reads
-- account/password/session schema and API paths present
-- local-first follows remain usable without Postgres
-- synced Brief Packs, reader preferences, read state and change inbox activate with Postgres
-- follow-up Brief Context is wired through `BriefRequest → BriefResult`
-- claim-level evidence inspection is rendered in Brief Me
-- comparison decomposition now correctly handles `Compare Nvidia vs AMD`
-- iterative research-gap evaluation and a bounded refinement pass are wired into the V6 research engine
-- V8 database migration is appended to the bootstrap schema
-- daily personal notification generation is integrated with graceful failure isolation
-- `SYSTEMS.md` preserves V1–V10 scope
-
-## Full dependency-backed build
-
-`npm install` could not complete in the artifact environment because external package installation timed out. Therefore the real Next.js dependency-backed TypeScript/build gate must still run on the development machine:
+## V9 local release gate
+Run from the project root:
 
 ```bash
 npm install
@@ -35,19 +10,22 @@ npm run check
 npm run build
 ```
 
+`npm run check` preserves the V4–V8 architecture checks and adds the V9 authority/distribution contract.
+
+## V9 production gate
 After deployment:
 
-```bash
-$env:BRIEFS_EVAL_BASE_URL="https://your-deployment.example"
-npm run eval:v8
+```powershell
+$env:BRIEFS_EVAL_BASE_URL="https://briefs-blog.vercel.app"
+npm run eval:v9
 ```
 
-## Production activation
+The deployed smoke suite checks health, API status, robots, sitemap, RSS, llms.txt, a canonical WW2 page, the public Brief API and Markdown export.
 
-To activate accounts, synced Brief Packs, persisted conversations, read-state and the personal change inbox, configure `DATABASE_URL` and run:
-
-```bash
-npm run db:bootstrap
-```
-
-Set long random values for `CRON_SECRET` and `ADMIN_TOKEN`. Market quote freshness remains dependent on the optional `ALPHA_VANTAGE_API_KEY` entitlement.
+## Manual authority checks
+- View page source on `/briefs/world-war-ii` and confirm Article + Breadcrumb JSON-LD.
+- Confirm `/brief-me?q=WW2` is noindex while `/briefs/world-war-ii` is indexable.
+- Expand a tracked claim and open its supporting evidence.
+- Confirm the visible verification date comes from knowledge evidence, not merely request time.
+- Confirm RSS and sitemap URLs use `BRIEFS_BASE_URL` in production.
+- Confirm email delivery remains disabled without credentials and does not fail the daily intelligence run.

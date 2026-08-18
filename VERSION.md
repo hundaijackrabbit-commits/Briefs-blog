@@ -1,21 +1,7 @@
-# Briefs.blog version 0.8.0
+# Briefs.blog V9 — Authority & Distribution
 
-**Core release:** V8 — Personal Intelligence, Context & Evidence Inspection
+Package version: **0.9.0**
 
-V8 turns the V7 research/query engine into a more persistent product. It adds reader accounts, secure sessions, Brief Packs, local-first follows, a change inbox, since-last-read state, follow-up context, claim-level evidence inspection, a comparison surface, an iterative research-gap loop, and admin-page authentication.
+V9 makes the intelligence architecture durable and externally legible: canonical Brief pages, evidence/provenance, structured metadata, public feeds, exports, a limited public API, listen mode, and optional digest email delivery.
 
-Key additions:
-- DB-backed reader registration/login with scrypt password hashing and hashed session tokens
-- local-first follows that work even before Postgres is configured
-- synced Brief Packs and reader preferences when Postgres is connected
-- daily personal change-notification generation from tracked change candidates
-- finite “You’re caught up” / “N things changed since you were here” state
-- follow-up Brief Context that carries subject, claim and source context forward
-- persisted conversation/turn foundation when Postgres is connected
-- claim-level evidence drawers
-- explicit multi-entity comparison cards
-- iterative research-gap evaluation and a bounded second-pass refinement path
-- protected `/admin/*` UI through a hashed HttpOnly admin session cookie
-- V8 architecture/evaluation harnesses
-
-V8 preserves V1–V7. V9 remains Authority & Distribution; V10 remains production integration, scale, security, observability and product completion.
+V1–V8 systems remain preserved. V10 is the final major release and is reserved for production integration, scale, security, observability, Signals/trend maturity, generated media and commercial hardening.
