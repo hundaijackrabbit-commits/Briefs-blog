@@ -145,6 +145,17 @@ export async function runGlobalEditorialSelection(options:{force?:boolean;draft?
     const ranked=await rankGlobalCandidates(discovered);
     const viable=ranked.filter(candidate=>candidate.candidateIntegrityPassed===true&&Number(candidate.candidateIntegrityScore||0)>=60&&candidate.domains.length>=2&&candidate.evidenceBreadth>=42&&candidate.finalScore>=55);
     if(!viable.length){
+      const diagnostics=ranked.slice(0,12).map(candidate=>({
+        subject:candidate.subject,
+        integrity:Number(candidate.candidateIntegrityScore||0),
+        eventhood:Number(candidate.eventhoodScore||0),
+        domains:candidate.domains.length,
+        mentions:candidate.mentionCount,
+        evidenceBreadth:candidate.evidenceBreadth,
+        importance:candidate.importanceScore,
+        finalScore:candidate.finalScore
+      }));
+      console.info("[global-editorial] no viable candidates",JSON.stringify(diagnostics));
       await sql`update publication_global_runs set status='failed',error_summary='No candidate passed discovery-integrity and global importance gates',completed_at=now() where id=${runId}::uuid`;
       return {status:"research-required",editorialDay:day,reason:"No candidate passed discovery-integrity and global importance gates"};
     }

@@ -2,6 +2,7 @@ import { fetchJson, stableResearchId } from "@/lib/research/http";
 import type { GlobalArticleSeed,GlobalCategory,GlobalEventCandidate,GlobalRegion } from "@/lib/publication/global-types";
 import { anchorPreservingQuery,buildEventAnchor,clusterCoherenceScore,titleEventAlignment } from "@/lib/publication/event-identity";
 import { evaluateCandidateIntegrity } from "@/lib/publication/candidate-integrity";
+import { orderDiscoveryCandidates } from "@/lib/publication/candidate-pool";
 
 // Discovery sources are signals only. They may propose events, but never establish facts by themselves.
 type GdeltArticle={url?:string;title?:string;seendate?:string;domain?:string;sourcecountry?:string};
@@ -176,7 +177,7 @@ function clusterSeeds(seeds:GlobalArticleSeed[]):GlobalEventCandidate[]{
     }
     if(best>=0)clusters[best].seeds.push(seed);else clusters.push({seeds:[seed],category:seed.category});
   }
-  return clusters.map(cluster=>{
+  const candidates=clusters.map(cluster=>{
     const allTitles=[...new Set(cluster.seeds.map(s=>s.title))];
     const newest=cluster.seeds.map(s=>s.publishedAt).filter((v):v is string=>Boolean(v)).sort().at(-1)||null;
     const eventAnchor=buildEventAnchor(allTitles[0]||"",allTitles,newest);
@@ -193,7 +194,8 @@ function clusterSeeds(seeds:GlobalArticleSeed[]):GlobalEventCandidate[]{
     const researchQuery=anchorPreservingQuery(bestResearchPhrase(titles),eventAnchor);
     const integrity=evaluateCandidateIntegrity({eventAnchor,titles,clusterCoherence});
     return {eventKey:stableResearchId("world",eventSignature(titles)),subject:titles[0],researchQuery,eventAnchor,clusterCoherence,...integrity,category,titles:titles.slice(0,12),urls:urls.slice(0,30),domains:domains.slice(0,30),sourceCountries:countries.slice(0,30),regions:regions.length?regions:(["Global"] as GlobalRegion[]),mentionCount:urls.length,newestAt:newest};
-  }).filter(candidate=>candidate.candidateIntegrityPassed).sort((a,b)=>Number(b.candidateIntegrityScore||0)-Number(a.candidateIntegrityScore||0)||b.domains.length-a.domains.length||b.mentionCount-a.mentionCount).slice(0,120);
+  });
+  return orderDiscoveryCandidates(candidates.filter(candidate=>candidate.candidateIntegrityPassed)).slice(0,120);
 }
 
 async function collectBatched(

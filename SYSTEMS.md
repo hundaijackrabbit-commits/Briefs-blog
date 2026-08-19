@@ -327,3 +327,11 @@ V10 closes the ten-version MVP roadmap. Future work is normal post-MVP iteration
 - Dynamic Event Alignment Dimensions — operational; absent topic, action, or geography dimensions do not dilute event-match scores
 - Action Coverage Telemetry Fix — operational; absent action terms now report 0 coverage while remaining neutral in the composite alignment score
 - Canonical law — deep research is reserved for candidates that already demonstrate a coherent, observable event in discovery signals
+
+## Publication Engine 1.2.2 — Candidate Pool Ordering & Viability Diagnostics
+- Evidence-Prospect Discovery Ordering — operational; integrity remains a hard gate, but surviving candidates are ordered first by independent-domain breadth and mention support before integrity score
+- Full Bounded Global Ranking — operational; global importance/distinctiveness scoring evaluates up to 120 integrity-passed candidates rather than only the first 50
+- Viability Starvation Guard — operational; a coherent multi-domain event cannot be hidden behind dozens of high-integrity single-domain candidates before importance scoring
+- Zero-Viable Diagnostics — operational; failed runs log top ranked candidate metrics for integrity, domain breadth, evidence breadth, importance and final score
+- Existing Viability Thresholds Preserved — `domains >= 2`, `evidenceBreadth >= 42`, `finalScore >= 55`, and discovery-integrity requirements remain unchanged
+- Canonical law — integrity is a gate, not a substitute for global importance or evidence breadth

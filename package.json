@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "check": "npm run typecheck && npm run v4check && npm run v5check && npm run v6check && npm run v7check && npm run intentcheck && npm run v8check && npm run v9check && npm run v10check && npm run publication:check && npm run refinement:check && npm run global:check && npm run alignment:check && npm run alignment:regression && npm run writer:check && npm run writer:regression && npm run evidence:check && npm run evidence:regression && npm run discovery:check && npm run discovery:regression",
+    "check": "npm run typecheck && npm run v4check && npm run v5check && npm run v6check && npm run v7check && npm run intentcheck && npm run v8check && npm run v9check && npm run v10check && npm run publication:check && npm run refinement:check && npm run global:check && npm run alignment:check && npm run alignment:regression && npm run writer:check && npm run writer:regression && npm run evidence:check && npm run evidence:regression && npm run discovery:check && npm run discovery:regression && npm run pool:check && npm run pool:regression",
     "staticcheck": "node scripts/run-check.mjs scripts/static-check.py",
     "stabilize": "node scripts/run-check.mjs scripts/stabilization-check.py",
     "v4check": "node scripts/run-check.mjs scripts/v4-check.py",
@@ -38,7 +38,9 @@
     "evidence:check": "node scripts/evidence-integrity-check.mjs",
     "evidence:regression": "node --experimental-strip-types scripts/evidence-integrity-regression.mjs",
     "discovery:check": "node scripts/discovery-integrity-check.mjs",
-    "discovery:regression": "node --experimental-strip-types scripts/discovery-integrity-regression.mjs"
+    "discovery:regression": "node --experimental-strip-types scripts/discovery-integrity-regression.mjs",
+    "pool:check": "node scripts/candidate-pool-check.mjs",
+    "pool:regression": "node --experimental-strip-types scripts/candidate-pool-regression.mjs"
   },
   "dependencies": {
     "next": "16.2.2",

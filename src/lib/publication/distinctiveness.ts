@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import type { GlobalEventCandidate,GlobalScoredCandidate } from "@/lib/publication/global-types";
 import { scoreGlobalImportance } from "@/lib/publication/global-importance";
+import { rankingInput } from "@/lib/publication/candidate-pool";
 
 function clamp(n:number){return Math.max(0,Math.min(100,Math.round(n)));}
 const STOP=new Set("the a an and or but for with from into over after before amid as at by to of in on is are was were be been being it its this that new latest update says world global today why what how when where matters explained".split(" "));
@@ -26,4 +27,4 @@ function scoreWithHistory(candidate:GlobalEventCandidate,recent:RecentFlagship[]
 }
 
 export async function scoreGlobalDistinctiveness(candidate:GlobalEventCandidate):Promise<GlobalScoredCandidate>{return scoreWithHistory(candidate,await recentFlagships());}
-export async function rankGlobalCandidates(candidates:GlobalEventCandidate[]){const recent=await recentFlagships();return candidates.slice(0,50).map(candidate=>scoreWithHistory(candidate,recent)).sort((a,b)=>b.finalScore-a.finalScore||b.importanceScore-a.importanceScore||b.evidenceBreadth-a.evidenceBreadth);}
+export async function rankGlobalCandidates(candidates:GlobalEventCandidate[]){const recent=await recentFlagships();return rankingInput(candidates).map(candidate=>scoreWithHistory(candidate,recent)).sort((a,b)=>b.finalScore-a.finalScore||b.importanceScore-a.importanceScore||b.evidenceBreadth-a.evidenceBreadth);}
