@@ -32,6 +32,7 @@ const INTERNAL_META_PATTERNS:Array<{re:RegExp;label:string}>=[
   {re:/\bsource prose was not used as a writing template\b/i,label:"source prose was not used as a writing template"},
   {re:/\brecent reporting detail that changes how to read\b/i,label:"recent reporting detail that changes how to read"}
 ];
+const EMPTY_EVIDENCE_PATTERNS=[/remaining evidence does not add/i,/not enough evidence to add/i,/without repeating the same claims/i,/evidence remains too thin/i];
 
 function readerReadyChecks(draft:ArticleDraft){
   const visible=[draft.title,draft.deck,...draft.sections.filter(s=>s.purpose!=="method").map(s=>`${s.heading}\n${s.body}`)].join("\n\n");
@@ -50,13 +51,28 @@ function readerReadyChecks(draft:ArticleDraft){
   return {issues,nonMethodWords,substantiveSections};
 }
 
+function evidenceDepthIssues(draft:ArticleDraft,graph:ResearchGraph){
+  const issues:string[]=[];
+  const evidenceSection=draft.sections.find(s=>s.key==="evidence"||/\bevidence\b/i.test(s.heading));
+  if(!evidenceSection){issues.push("Evidence-depth gate requires a dedicated evidence section.");return issues;}
+  const evidenceWords=wordCount(evidenceSection.body);
+  if(evidenceSection.claimIds.length<1)issues.push("Evidence-depth gate requires the evidence section to cite at least one grounded claim.");
+  if(evidenceWords<12)issues.push(`Evidence-depth gate requires at least 12 words of factual evidence; section has ${evidenceWords}.`);
+  if(EMPTY_EVIDENCE_PATTERNS.some(re=>re.test(evidenceSection.body)))issues.push("Evidence-depth gate rejected an empty-evidence placeholder.");
+  if(graph.findings.length>=3){
+    const claimBacked=draft.sections.filter(s=>["answer","evidence","context"].includes(s.purpose||"")&&s.claimIds.length>0);
+    if(claimBacked.length<2)issues.push(`Evidence-depth gate requires at least 2 claim-backed factual sections when 3+ findings exist; draft has ${claimBacked.length}.`);
+  }
+  return issues;
+}
+
 export function evaluatePublicationQuality(args:{draft:ArticleDraft;graph:ResearchGraph;originality:OriginalityReport;minSources:number;requirePrimary:boolean;minStoryScore:number;storyScore:number;independentFamilies:number;primarySources:number;storyContract:StoryContract;}):PublicationQualityReport{
   const {draft,graph,originality,storyContract}=args;
   const allowedClaims=new Set(graph.findings.map(f=>f.id));
   const usedClaims=new Set(draft.sections.flatMap(s=>s.claimIds));
   const unsupportedClaimIds=[...usedClaims].filter(id=>!allowedClaims.has(id));
   const evidenceCoverage=usedClaims.size?clamp([...usedClaims].filter(id=>allowedClaims.has(id)).length/usedClaims.size*100):0;
-  const factualUngrounded=draft.sections.filter(s=>["answer","evidence","context"].includes(s.purpose||"")&&s.body.trim().length>80&&s.claimIds.length===0);
+  const factualUngrounded=draft.sections.filter(s=>(["answer","evidence","context"].includes(s.purpose||"")||s.key==="evidence")&&s.body.trim().length>80&&s.claimIds.length===0);
   const fullText=[draft.title,draft.deck,...draft.sections.map(s=>`${s.heading}\n${s.body}`)].join("\n\n");
   const voice=evaluateVoice(fullText);
   const audience=evaluateAudienceFit(draft);
@@ -66,6 +82,7 @@ export function evaluatePublicationQuality(args:{draft:ArticleDraft;graph:Resear
   const headlineScore=titleEvidenceScore(draft,graph);
   const specificity=specificityScore(fullText);
   const readerReady=readerReadyChecks(draft);
+  const evidenceDepth=evidenceDepthIssues(draft,graph);
 
   const blockers:string[]=[];
   const warnings=[...voice.warnings,...originality.warnings,...audience.warnings];
@@ -78,13 +95,14 @@ export function evaluatePublicationQuality(args:{draft:ArticleDraft;graph:Resear
   if(!originality.passed)blockers.push("Originality gate failed.");
   if(unsupportedClaimIds.length)blockers.push(`${unsupportedClaimIds.length} draft claim reference(s) are not present in the research graph.`);
   if(factualUngrounded.length)blockers.push(`${factualUngrounded.length} factual section(s) lack claim-level grounding.`);
-  if(graph.alignment&&!graph.alignment.passed)blockers.push(`Research subject alignment ${graph.alignment.score}/100 failed: ${graph.alignment.reasons.join(" ")}`);if(!graph.sufficient)blockers.push("Research is not sufficient to support publication.");
+  if(graph.alignment&&!graph.alignment.passed)blockers.push(`Research subject alignment ${graph.alignment.score}/100 failed: ${graph.alignment.reasons.join(" ")}`);
+  if(!graph.sufficient)blockers.push("Research is not sufficient to support publication.");
   if(args.storyScore<args.minStoryScore)blockers.push(`Story score ${args.storyScore} is below the ${args.minStoryScore} threshold.`);
   if(voice.score<76)blockers.push("Voice quality is below the V10.2 publication threshold.");
   if(audience.score<76)blockers.push("Audience fit is below the V10.2 publication threshold.");
   if(headlineScore<68)blockers.push("Headline is not sufficiently anchored to the researched subject/evidence.");
   if(!storyContract.strongestClaimIds.every(id=>allowedClaims.has(id)))blockers.push("Story contract references claims outside the research graph.");
-  blockers.push(...readerReady.issues);
+  blockers.push(...readerReady.issues,...evidenceDepth);
 
   if(draft.generatedBy==="briefs-deterministic")warnings.push("Deterministic fallback writer used; human editorial review is required before publication.");
 
@@ -92,16 +110,8 @@ export function evaluatePublicationQuality(args:{draft:ArticleDraft;graph:Resear
 
   return {
     passed:blockers.length===0&&totalScore>=83,
-    totalScore,
-    evidenceCoverage,
-    evidenceDiversity:diversity,
-    originalityScore,
-    audienceScore:audience.score,
-    readerGoalScore:audience.goalScore,
-    voiceScore:voice.score,
-    freshnessScore,
-    headlineScore,
-    specificityScore:specificity,
+    totalScore,evidenceCoverage,evidenceDiversity:diversity,originalityScore,audienceScore:audience.score,readerGoalScore:audience.goalScore,
+    voiceScore:voice.score,freshnessScore,headlineScore,specificityScore:specificity,
     unsupportedFacts:unsupportedClaimIds.length+factualUngrounded.length,
     blockers,
     warnings:[...warnings,`Reader-ready narrative: ${readerReady.nonMethodWords} words across ${readerReady.substantiveSections} substantive sections.`,`Reader outcome: ${storyContract.readerOutcome}`,`Voice evaluator: ${voice.version}`]

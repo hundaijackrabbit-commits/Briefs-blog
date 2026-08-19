@@ -1,14 +1,11 @@
 export type WritingDomain="markets"|"health"|"policy"|"technology"|"business"|"science"|"world"|"culture"|"general";
-
 const STOP=new Set("the a an and or but for with from into over after before amid as at by to of in on is are was were be been being it its this that these those new latest update says say said report reports world global today yesterday tomorrow live more most less than about could would should will may might has have had not no yes their his her our your who what why how when where which one two three first last major key top".split(" "));
 const GENERIC=new Set("news breaking update updates report reports reporting says said latest analysis exclusive video watch story detail recent current".split(" "));
-
 function clean(value:string){return value.replace(/\s+/g," ").trim();}
 function words(value:string){return clean(value.toLowerCase().replace(/[^a-z0-9\s-]/g," ").replace(/-/g," ")).split(/\s+/).filter(Boolean);}
 function unique<T>(items:T[]){return [...new Set(items)];}
 function contentWords(value:string){return words(value).filter(w=>w.length>2&&!STOP.has(w)&&!GENERIC.has(w));}
 function numbers(value:string){return unique(value.match(/\b\d[\d,.%]*\b/g)||[]).slice(0,4);}
-function has(text:string,re:RegExp){return re.test(text);}
 function sourceLabel(name?:string){return clean(name||"An aligned source");}
 
 export function detectWritingDomain(category:string,subject:string,evidenceText:string):WritingDomain{
@@ -20,114 +17,26 @@ export function detectWritingDomain(category:string,subject:string,evidenceText:
   if(/business/.test(c)||/\b(company|merger|bankruptcy|trade|supply chain|earnings|revenue)\b/.test(text))return "business";
   if(/science/.test(c)||/\b(climate|earthquake|wildfire|hurricane|research|space|scientist)\b/.test(text))return "science";
   if(/culture/.test(c)||/\b(media|culture|education|religion|entertainment)\b/.test(text))return "culture";
-  if(/world/.test(c))return "world";
-  return "general";
+  if(/world/.test(c))return "world";return "general";
 }
-
+function genericSynthesis(value:string,subject:string,name:string,index:number){
+  const terms=unique(contentWords(value)).filter(w=>!contentWords(subject).includes(w)).slice(0,6);const nums=numbers(value);const label=sourceLabel(name);
+  if(nums.length&&terms.length>=2)return `${label} adds quantified context to ${subject}: the report includes ${nums.slice(0,2).join(" and ")} and centers on ${terms.slice(0,3).join(", ")}.`;
+  if(terms.length>=3){const rotations=[`${label} adds independently reported context to ${subject}, including ${terms.slice(0,3).join(", ")}.`,`${label} provides a separate account with context around ${terms.slice(0,3).join(", ")}.`,`${label} contributes additional reported detail involving ${terms.slice(0,3).join(", ")}.`];return rotations[index%rotations.length];}
+  return `${label} provides an independent account represented in the aligned evidence set.`;
+}
 function marketSynthesis(value:string,subject:string,name:string,index:number){
-  const lower=value.toLowerCase();
-  const maturity=value.match(/\b(\d{1,2})[- ]year\s+(?:treasury|bond|yield)/i)?.[1];
-  const yearHigh=value.match(/\b(\d{1,2})[- ]year high\b/i)?.[1];
-  const since=value.match(/\bsince\s+(\d{4})\b/i)?.[1];
-  const nums=numbers(value);
-  if(/\b(yield|bond|borrowing cost)/i.test(value)){
-    if(maturity&&yearHigh)return `${sourceLabel(name)} identifies the ${maturity}-year government-bond maturity as part of a move to yield levels not seen for roughly ${yearHigh} years.`;
-    if(maturity&&since)return `${sourceLabel(name)} places the ${maturity}-year government-bond yield at its highest level since ${since}, adding a dated benchmark to the broader move in borrowing costs.`;
-    if(since)return `${sourceLabel(name)} dates the current rise in government borrowing costs to levels last seen around ${since}, independently reinforcing the selected bond-market event.`;
-    if(/multi[- ]?(?:year|decade)/i.test(value))return `${sourceLabel(name)} independently reports government borrowing costs at multi-period highs, reinforcing that the selected event is broader than a single isolated price move.`;
-    if(/sell[- ]?off/i.test(value))return `${sourceLabel(name)} describes a bond sell-off accompanying higher government borrowing costs, which supports the direction of the move without establishing how long it will last.`;
-    return `${sourceLabel(name)} independently supports the reported move in government bond yields and sovereign borrowing costs${nums.length?`, with quantitative references including ${nums.join(" and ")}`:""}.`;
-  }
+  const maturity=value.match(/\b(\d{1,2})[- ]year\s+(?:treasury|bond|yield)/i)?.[1];const yearHigh=value.match(/\b(\d{1,2})[- ]year high\b/i)?.[1];const since=value.match(/\bsince\s+(\d{4})\b/i)?.[1];const nums=numbers(value);
+  if(/\b(yield|bond|borrowing cost)/i.test(value)){if(maturity&&yearHigh)return `${sourceLabel(name)} identifies the ${maturity}-year government-bond maturity as part of a move to yield levels not seen for roughly ${yearHigh} years.`;if(maturity&&since)return `${sourceLabel(name)} places the ${maturity}-year government-bond yield at its highest level since ${since}, adding a dated benchmark to the broader move in borrowing costs.`;if(since)return `${sourceLabel(name)} dates the current rise in government borrowing costs to levels last seen around ${since}, independently reinforcing the selected bond-market event.`;if(/multi[- ]?(?:year|decade)/i.test(value))return `${sourceLabel(name)} independently reports government borrowing costs at multi-period highs, reinforcing that the selected event is broader than a single isolated price move.`;if(/sell[- ]?off/i.test(value))return `${sourceLabel(name)} describes a bond sell-off accompanying higher government borrowing costs, which supports the direction of the move without establishing how long it will last.`;return `${sourceLabel(name)} independently supports the reported move in government bond yields and sovereign borrowing costs${nums.length?`, with quantitative references including ${nums.join(" and ")}`:""}.`;}
   if(/\b(stock|share|chip)\b/i.test(value))return `${sourceLabel(name)} reports weakness in equities alongside the rise in government borrowing costs, adding cross-market context without proving that one move caused the other.`;
   if(/\boil\b/i.test(value))return `${sourceLabel(name)} connects the market backdrop with oil-price concerns, while the evidence set remains strongest on the observed bond-yield move itself.`;
   return genericSynthesis(value,subject,name,index);
 }
-
-function healthSynthesis(value:string,subject:string,name:string,index:number){
-  const nums=numbers(value);
-  const lower=value.toLowerCase();
-  if(/\binfection|cases?\b/.test(lower)&&nums.length)return `${sourceLabel(name)} adds a quantified case-count update to ${subject}, with the reporting identifying ${nums.slice(0,2).join(" and ")} as the relevant figures.`;
-  if(/\bdeath|dead|fatalit/.test(lower)&&nums.length)return `${sourceLabel(name)} adds a mortality update to ${subject}, with ${nums.slice(0,2).join(" and ")} among the figures reported.`;
-  if(/\bprovince|region|district|country\b/.test(lower))return `${sourceLabel(name)} adds evidence about the geographic extent of ${subject}, supporting the assessment that the event is not confined to its earliest reported location.`;
-  return genericSynthesis(value,subject,name,index);
-}
-
-function policySynthesis(value:string,subject:string,name:string,index:number){
-  if(/\bcourt|judge|ruling|decision\b/i.test(value))return `${sourceLabel(name)} adds a judicial development to ${subject}, clarifying that the current state now includes a court action rather than only a political proposal.`;
-  if(/\blaw|bill|legislation|regulation|rule\b/i.test(value))return `${sourceLabel(name)} reports a formal legal or regulatory step connected to ${subject}, which is stronger evidence than discussion or speculation alone.`;
-  return genericSynthesis(value,subject,name,index);
-}
-
-function technologySynthesis(value:string,subject:string,name:string,index:number){
-  if(/\bcyber|hack|breach|attack\b/i.test(value))return `${sourceLabel(name)} adds an independently reported security development to ${subject}, keeping the factual boundary on the observed incident rather than downstream speculation.`;
-  if(/\bchip|semiconductor\b/i.test(value))return `${sourceLabel(name)} adds semiconductor-market evidence to ${subject}, reinforcing the technology dimension of the event without extending the claim beyond what was reported.`;
-  return genericSynthesis(value,subject,name,index);
-}
-
-function genericSynthesis(value:string,subject:string,name:string,index:number){
-  const terms=unique(contentWords(value)).filter(w=>!contentWords(subject).includes(w)).slice(0,6);
-  const nums=numbers(value);
-  const label=sourceLabel(name);
-  if(nums.length&&terms.length>=2)return `${label} adds quantified context to ${subject}: the report includes ${nums.slice(0,2).join(" and ")} and centers on ${terms.slice(0,3).join(", ")}.`;
-  if(terms.length>=3){
-    const rotations=[
-      `${label} independently supports ${subject}, with its reporting emphasizing ${terms.slice(0,3).join(", ")} rather than a different event.`,
-      `${label} adds a separate account of ${subject}; its distinguishing context includes ${terms.slice(0,3).join(", ")}.`,
-      `${label} corroborates the selected event while adding context around ${terms.slice(0,3).join(", ")}.`
-    ];
-    return rotations[index%rotations.length];
-  }
-  return `${label} independently reports the selected event and supports the evidence graph without adding a broader causal claim.`;
-}
-
-export function synthesizeReportingFinding(value:string,subject:string,sourceName:string|undefined,domain:WritingDomain,index:number){
-  if(domain==="markets")return marketSynthesis(value,subject,sourceName||"",index);
-  if(domain==="health")return healthSynthesis(value,subject,sourceName||"",index);
-  if(domain==="policy")return policySynthesis(value,subject,sourceName||"",index);
-  if(domain==="technology")return technologySynthesis(value,subject,sourceName||"",index);
-  return genericSynthesis(value,subject,sourceName||"",index);
-}
-
-export function domainMeaning(domain:WritingDomain,subject:string){
-  if(domain==="markets")return `The useful question is not whether ${subject} sounds dramatic, but what the observed move says about financing conditions. Higher sovereign yields can matter through borrowing costs and risk pricing; the current evidence establishes the move more clearly than its duration or every downstream market effect.`;
-  if(domain==="health")return `The significance of ${subject} depends on the verified scale of the event, its geographic reach, and the official response. The evidence is strongest on what has been observed so far and weaker on outcomes that require additional surveillance or investigation.`;
-  if(domain==="policy")return `The important distinction is between political intent and an operative policy change. For ${subject}, the evidence should be read in terms of what has formally changed, which institutions are involved, and which implementation questions remain open.`;
-  if(domain==="technology")return `The practical significance of ${subject} depends on what has actually been deployed, disrupted, adopted, or measured. The evidence supports the observed development more strongly than broad claims about how the entire technology market will respond.`;
-  if(domain==="business")return `The significance of ${subject} lies in the verified change to firms, financing, trade, or operations. The current evidence can establish what changed without assuming that every strategic or economic consequence has already followed.`;
-  if(domain==="science")return `The useful distinction is between the observed event, the evidence explaining it, and consequences that remain uncertain. For ${subject}, those layers should stay separate until additional measurements or authoritative assessments narrow the uncertainty.`;
-  if(domain==="world")return `The significance of ${subject} depends on the verified change itself and on whether it alters decisions, risks, or conditions beyond the immediate event. The evidence supports the current state more strongly than predictions about what happens next.`;
-  return `The value of the evidence is in separating what has actually changed in ${subject} from conclusions that remain unverified. The current graph supports the observed event more strongly than any broad forecast built on top of it.`;
-}
-
-export function domainWatch(domain:WritingDomain,subject:string,evidenceText:string){
-  const lower=evidenceText.toLowerCase();
-  if(domain==="markets"){
-    const parts:string[]=[];
-    if(/\b(yield|bond|treasury|borrowing cost)\b/.test(lower))parts.push("whether sovereign yields remain elevated or reverse across major maturities");
-    if(/\b(central bank|interest rate|fed|ecb|bank of england)\b/.test(lower))parts.push("whether central-bank communication or rate expectations materially change");
-    if(/\b(oil|inflation)\b/.test(lower))parts.push("whether inflation or energy-price pressures in the evidence set intensify or ease");
-    if(/\b(stock|shares|equities|chip)\b/.test(lower))parts.push("whether the move broadens further across risk assets");
-    const chosen=(parts.length?parts:["whether the observed market move persists, broadens, or reverses"]).slice(0,3);
-    return `The next material evidence is ${chosen.join("; ")}. Those are observable follow-ups; the current reporting does not establish that today's move will persist.`;
-  }
-  if(domain==="health")return `The next material evidence is a verified change in case counts, geographic spread, mortality, or official public-health response. Until those measures change, the safest reading is to keep the current reported scale separate from forecasts about the outbreak's eventual course.`;
-  if(domain==="policy")return `The next material evidence is a formal change in legal text, implementation, enforcement, judicial review, or institutional response. Until one of those changes, the current policy state should not be expanded into outcomes the evidence has not yet established.`;
-  if(domain==="technology")return `The next material evidence is a verified change in deployment, adoption, measured performance, security impact, or official response. Those observations matter more than forecasts that are not yet represented in the evidence graph.`;
-  return `The next material evidence is a verified change in the scale, direction, institutional response, or directly observed consequences of ${subject}. Until then, the current evidence should define the boundary of the briefing.`;
-}
-
-export function domainDeckClause(domain:WritingDomain,subject:string,evidenceText:string){
-  const lower=evidenceText.toLowerCase();
-  if(domain==="markets"&&/\b(yield|bond|borrowing cost|treasury)\b/.test(lower))return `The evidence is coherent on a significant move in government bond yields and borrowing costs, while its duration and downstream effects remain less certain.`;
-  if(domain==="health")return `The evidence is coherent on the reported public-health event, while its future scale and downstream consequences remain less certain.`;
-  if(domain==="policy")return `The evidence is coherent on the formal policy or institutional development, while implementation and downstream effects remain less certain.`;
-  if(domain==="technology")return `The evidence is coherent on the observed technology development, while broader market or system effects remain less certain.`;
-  return `The evidence is coherent on what changed in ${subject}, while downstream consequences remain less certain than the event itself.`;
-}
-
-export function longestSharedRun(a:string,b:string){
-  const A=words(a),B=words(b);let best=0;
-  const index=new Map<string,number[]>();B.forEach((w,i)=>index.set(w,[...(index.get(w)||[]),i]));
-  for(let i=0;i<A.length;i++)for(const j of index.get(A[i])||[]){let k=0;while(i+k<A.length&&j+k<B.length&&A[i+k]===B[j+k])k++;best=Math.max(best,k);}
-  return best;
-}
+function healthSynthesis(value:string,subject:string,name:string,index:number){const nums=numbers(value);const lower=value.toLowerCase();if(/\binfection|cases?\b/.test(lower)&&nums.length)return `${sourceLabel(name)} adds a quantified case-count update to ${subject}, with the reporting identifying ${nums.slice(0,2).join(" and ")} as the relevant figures.`;if(/\bdeath|dead|fatalit/.test(lower)&&nums.length)return `${sourceLabel(name)} adds a mortality update to ${subject}, with ${nums.slice(0,2).join(" and ")} among the figures reported.`;if(/\bprovince|region|district|country\b/.test(lower))return `${sourceLabel(name)} adds evidence about the geographic extent of ${subject}, supporting the assessment that the event is not confined to its earliest reported location.`;return genericSynthesis(value,subject,name,index);}
+function policySynthesis(value:string,subject:string,name:string,index:number){if(/\bcourt|judge|ruling|decision\b/i.test(value))return `${sourceLabel(name)} adds a judicial development to ${subject}, clarifying that the current state now includes a court action rather than only a political proposal.`;if(/\blaw|bill|legislation|regulation|rule\b/i.test(value))return `${sourceLabel(name)} reports a formal legal or regulatory step connected to ${subject}, which is stronger evidence than discussion or speculation alone.`;return genericSynthesis(value,subject,name,index);}
+function technologySynthesis(value:string,subject:string,name:string,index:number){if(/\bcyber|hack|breach|attack\b/i.test(value))return `${sourceLabel(name)} adds an independently reported security development to ${subject}, keeping the factual boundary on the observed incident rather than downstream speculation.`;if(/\bchip|semiconductor\b/i.test(value))return `${sourceLabel(name)} adds semiconductor-market evidence to ${subject}, reinforcing the technology dimension of the event without extending the claim beyond what was reported.`;return genericSynthesis(value,subject,name,index);}
+export function synthesizeReportingFinding(value:string,subject:string,sourceName:string|undefined,domain:WritingDomain,index:number){if(domain==="markets")return marketSynthesis(value,subject,sourceName||"",index);if(domain==="health")return healthSynthesis(value,subject,sourceName||"",index);if(domain==="policy")return policySynthesis(value,subject,sourceName||"",index);if(domain==="technology")return technologySynthesis(value,subject,sourceName||"",index);return genericSynthesis(value,subject,sourceName||"",index);}
+export function domainMeaning(domain:WritingDomain,subject:string){if(domain==="markets")return `The useful question is not whether ${subject} sounds dramatic, but what the observed move says about financing conditions. Higher sovereign yields can matter through borrowing costs and risk pricing; the current evidence establishes the move more clearly than its duration or every downstream market effect.`;if(domain==="health")return `The significance of ${subject} depends on the verified scale of the event, its geographic reach, and the official response. The evidence is strongest on what has been observed so far and weaker on outcomes that require additional surveillance or investigation.`;if(domain==="policy")return `The important distinction is between political intent and an operative policy change. For ${subject}, the evidence should be read in terms of what has formally changed, which institutions are involved, and which implementation questions remain open.`;if(domain==="technology")return `The practical significance of ${subject} depends on what has actually been deployed, disrupted, adopted, or measured. The evidence supports the observed development more strongly than broad claims about how the entire technology market will respond.`;if(domain==="business")return `The significance of ${subject} lies in the verified change to firms, financing, trade, or operations. The current evidence can establish what changed without assuming that every strategic or economic consequence has already followed.`;if(domain==="science")return `The useful distinction is between the observed event, the evidence explaining it, and consequences that remain uncertain. For ${subject}, those layers should stay separate until additional measurements or authoritative assessments narrow the uncertainty.`;if(domain==="world")return `The significance of ${subject} depends on the verified change itself and on whether it alters decisions, risks, or conditions beyond the immediate event. The evidence supports the current state more strongly than predictions about what happens next.`;return `The value of the evidence is in separating what has actually changed in ${subject} from conclusions that remain unverified. The current graph supports the observed event more strongly than any broad forecast built on top of it.`;}
+export function domainWatch(domain:WritingDomain,subject:string,evidenceText:string){const lower=evidenceText.toLowerCase();if(domain==="markets"){const parts:string[]=[];if(/\b(yield|bond|treasury|borrowing cost)\b/.test(lower))parts.push("whether sovereign yields remain elevated or reverse across major maturities");if(/\b(central bank|interest rate|fed|ecb|bank of england)\b/.test(lower))parts.push("whether central-bank communication or rate expectations materially change");if(/\b(oil|inflation)\b/.test(lower))parts.push("whether inflation or energy-price pressures in the evidence set intensify or ease");if(/\b(stock|shares|equities|chip)\b/.test(lower))parts.push("whether the move broadens further across risk assets");const chosen=(parts.length?parts:["whether the observed market move persists, broadens, or reverses"]).slice(0,3);return `The next material evidence is ${chosen.join("; ")}. Those are observable follow-ups; the current reporting does not establish that today's move will persist.`;}if(domain==="health")return `The next material evidence is a verified change in case counts, geographic spread, mortality, or official public-health response. Until those measures change, the safest reading is to keep the current reported scale separate from forecasts about the outbreak's eventual course.`;if(domain==="policy")return `The next material evidence is a formal change in legal text, implementation, enforcement, judicial review, or institutional response. Until one of those changes, the current policy state should not be expanded into outcomes the evidence has not yet established.`;if(domain==="technology")return `The next material evidence is a verified change in deployment, adoption, measured performance, security impact, or official response. Those observations matter more than forecasts that are not yet represented in the evidence graph.`;return `The next material evidence is a verified change in the scale, direction, institutional response, or directly observed consequences of ${subject}. Until then, the current evidence should define the boundary of the briefing.`;}
+export function domainDeckClause(domain:WritingDomain,subject:string,evidenceText:string){const lower=evidenceText.toLowerCase();if(domain==="markets"&&/\b(yield|bond|borrowing cost|treasury)\b/.test(lower))return `The evidence is coherent on a significant move in government bond yields and borrowing costs, while its duration and downstream effects remain less certain.`;if(domain==="health")return `The evidence is coherent on the reported public-health event, while its future scale and downstream consequences remain less certain.`;if(domain==="policy")return `The evidence is coherent on the formal policy or institutional development, while implementation and downstream effects remain less certain.`;if(domain==="technology")return `The evidence is coherent on the observed technology development, while broader market or system effects remain less certain.`;return `The evidence is coherent on what changed in ${subject}, while downstream consequences remain less certain than the event itself.`;}
+export function longestSharedRun(a:string,b:string){const A=words(a),B=words(b);let best=0;const index=new Map<string,number[]>();B.forEach((w,i)=>index.set(w,[...(index.get(w)||[]),i]));for(let i=0;i<A.length;i++)for(const j of index.get(A[i])||[]){let k=0;while(i+k<A.length&&j+k<B.length&&A[i+k]===B[j+k])k++;best=Math.max(best,k);}return best;}

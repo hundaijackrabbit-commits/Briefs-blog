@@ -304,3 +304,14 @@ V10 closes the ten-version MVP roadmap. Future work is normal post-MVP iteration
 - Dynamic Alignment Dimensions — operational; absent action or geography dimensions are omitted from weighting instead of automatically scoring 100
 - Market Movement Action Normalization — operational; verbs such as hit, reach, rise, fall, slide and climb map to the event action `move`
 - Canonical law — originality failures are repaired in synthesis, never by lowering the originality gate
+
+## Publication Engine 1.2.2 — Raw Evidence Alignment & Evidence Depth Repair
+- Raw Evidence Alignment Gate — operational; a source must establish relevance from its own title/excerpt evidence, not from an assigned canonical finding subject
+- Subject-Label Contamination Guard — operational; `finding.subject` is excluded from source-match evidence
+- Pairwise Cluster Coherence — operational; clustered headlines must agree with one another, not merely share weak terms with a seed
+- Eventhood Gate — operational; editorial framing cannot substitute for an observable change event
+- Raw Distinctive-Term Minimum — operational; multi-term events require multiple anchor terms or a supported topic+action combination in raw source material
+- Evidence Depth Gate — operational; every publishable article needs a dedicated claim-backed evidence section
+- Factual Section Distribution Gate — operational; stories with three or more findings require at least two separately claim-backed factual sections
+- Empty Evidence Placeholder Block — operational; “no distinct second factual section” style placeholders fail publication quality
+- Canonical law — evidence relevance must be earned by the underlying source material; metadata assigned by Briefs cannot validate itself

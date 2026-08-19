@@ -24,10 +24,15 @@ const ACTION_GROUPS:Record<string,string[]>={
   arrest:["arrest","arrests","arrested","detain","detained","charge","charged"],
   evacuate:["evacuate","evacuates","evacuated","evacuation","evacuations"],
   deploy:["deploy","deploys","deployed","deployment","carrier","troops","forces"],
-  traffic:["traffic","trafficking","smuggle","smuggling","meth","drug","drugs"]
+  traffic:["traffic","trafficking","smuggle","smuggling","meth","drug","drugs"],
+  launch:["launch","launches","launched","release","releases","released","unveil","unveils","unveiled","introduce","introduces","introduced"],
+  disrupt:["outage","outages","shutdown","shutdowns","disrupt","disrupts","disrupted","disruption","disruptions"],
+  disaster:["earthquake","earthquakes","hurricane","hurricanes","wildfire","wildfires","flood","floods","flooding","eruption","eruptions","explosion","explosions"],
+  agree:["agreement","agreements","deal","deals","settlement","settlements","sign","signs","signed"]
 };
 const ACTION_LOOKUP=new Map<string,string>();
 for(const [canonical,words] of Object.entries(ACTION_GROUPS))for(const word of words)ACTION_LOOKUP.set(word,canonical);
+const EVENT_CLASS_TERMS=new Set(Object.keys(ACTION_GROUPS));
 
 function clean(value:string){return value.toLowerCase().replace(/[’']/g,"").replace(/[^a-z0-9\s-]/g," ").replace(/-/g," ").replace(/\s+/g," ").trim();}
 function stem(word:string){let w=word.toLowerCase();if(w.length>6&&w.endsWith("ing"))w=w.slice(0,-3);else if(w.length>5&&w.endsWith("ed"))w=w.slice(0,-2);else if(w.length>4&&w.endsWith("es"))w=w.slice(0,-2);else if(w.length>4&&w.endsWith("s"))w=w.slice(0,-1);return w;}
@@ -35,6 +40,7 @@ function unique<T>(items:T[]){return [...new Set(items)];}
 function overlapRatio(anchor:string[],text:Set<string>){if(!anchor.length)return 0;let hit=0;for(const term of anchor)if(text.has(term))hit++;return hit/anchor.length;}
 function geoTerms(value:string){const lower=` ${clean(value)} `;return unique(GEO_PHRASES.filter(term=>lower.includes(` ${term} `)).map(term=>term.toLowerCase()));}
 function canonicalAction(word:string){return ACTION_LOOKUP.get(word)||ACTION_LOOKUP.get(stem(word))||null;}
+function setSimilarity(a:Set<string>,b:Set<string>){if(!a.size||!b.size)return 0;let common=0;for(const x of a)if(b.has(x))common++;return common/Math.max(1,Math.min(a.size,b.size));}
 
 function supportedGeography(subject:string,titles:string[]){
   const direct=geoTerms(subject);
@@ -82,12 +88,36 @@ export function eventAlignmentComponents(anchor:ResearchEventAnchor,text:string)
 
 export function titleEventAlignment(anchor:ResearchEventAnchor,title:string){return eventAlignmentComponents(anchor,title).score;}
 
+export function pairwiseClusterCoherence(titles:string[]){
+  if(titles.length<=1)return 100;
+  const sets=titles.map(title=>new Set(eventTokens(title)));
+  const scores:number[]=[];
+  for(let i=0;i<sets.length;i++)for(let j=i+1;j<sets.length;j++)scores.push(setSimilarity(sets[i],sets[j]));
+  if(!scores.length)return 0;
+  const average=scores.reduce((a,b)=>a+b,0)/scores.length;
+  const supported=scores.filter(score=>score>=.34).length/scores.length;
+  return Math.max(0,Math.min(100,Math.round(average*65+supported*35)));
+}
+
 export function clusterCoherenceScore(anchor:ResearchEventAnchor,titles:string[]){
   if(!titles.length)return 0;
   const scores=titles.map(title=>titleEventAlignment(anchor,title));
   const average=scores.reduce((a,b)=>a+b,0)/scores.length;
   const supported=scores.filter(score=>score>=45).length/titles.length;
-  return Math.max(0,Math.min(100,Math.round(average*.62+supported*38)));
+  const anchorScore=average*.62+supported*38;
+  const pairwise=pairwiseClusterCoherence(titles);
+  // Pairwise agreement is a veto/penalty, not a dominant lexical reward. This
+  // rejects collage-like clusters while preserving paraphrased reports of one event.
+  const multiplier=titles.length>=3&&pairwise<15?.55:titles.length>=3&&pairwise<25?.78:1;
+  return Math.max(0,Math.min(100,Math.round(anchorScore*multiplier)));
+}
+
+export function eventhoodScore(anchor:ResearchEventAnchor,titles:string[]){
+  if(anchor.actionTerms.length)return 100;
+  if(!titles.length)return 0;
+  const withConcreteEvent=titles.filter(title=>eventTokens(title).some(token=>EVENT_CLASS_TERMS.has(token))).length;
+  const pairwise=pairwiseClusterCoherence(titles);
+  return Math.max(0,Math.min(100,Math.round((withConcreteEvent/titles.length)*70+pairwise*.30)));
 }
 
 export function anchorPreservingQuery(original:string,anchor:ResearchEventAnchor){
