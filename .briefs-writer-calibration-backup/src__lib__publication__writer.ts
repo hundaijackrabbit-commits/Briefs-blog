@@ -1,7 +1,6 @@
 import type { ResearchFinding,ResearchGraph,ResearchSource } from "@/lib/research/types";
 import type { ArticleDraft,ArticleSectionDraft,PublicationAudience,StoryContract } from "@/lib/publication/types";
 import { readerContract } from "@/lib/publication/audience";
-import { detectWritingDomain,domainDeckClause,domainMeaning,domainWatch,synthesizeReportingFinding } from "@/lib/publication/writer-synthesis";
 
 function clean(value:string){return value.replace(/\s+/g," ").trim();}
 function sentence(value:string){const c=clean(value);return c?c.replace(/[.!?]+$/g,"")+".":"";}
@@ -14,19 +13,35 @@ function findingSource(f:ResearchFinding,graph:ResearchGraph):ResearchSource|und
 function stripOutletSuffix(value:string){
   return clean(value).replace(/\s+[|–—-]\s+[^|–—-]{2,60}$/,"").replace(/\s*:\s*(WHO|CDC|UN|AP|Reuters)$/i,"").trim();
 }
-function evidenceText(graph:ResearchGraph){return [graph.canonicalSubject,...graph.findings.map(f=>`${f.predicate} ${f.valueText} ${f.statement}`),...graph.sources.map(s=>`${s.title} ${s.excerpt||""}`)].join(" ");}
-
-function claimSentence(f:ResearchFinding,graph:ResearchGraph,index:number,domain:ReturnType<typeof detectWritingDomain>){
+function paraphraseHeadline(value:string){
+  let t=stripOutletSuffix(value)
+    .replace(/\bDR Congo\b/gi,"the Democratic Republic of the Congo")
+    .replace(/\bD\.R\. Congo\b/gi,"the Democratic Republic of the Congo")
+    .replace(/\bCongo['’]s\b/gi,"the Democratic Republic of the Congo's");
+  t=t
+    .replace(/\bbecomes?\b/gi,"is now")
+    .replace(/\bnow deadliest ever\b/gi,"is now the deadliest on record")
+    .replace(/\bdeadliest in (?:the )?country['’]s history\b/gi,"the deadliest outbreak in the country's history")
+    .replace(/\bset to become deadliest on record\b/gi,"on track to become the deadliest on record")
+    .replace(/\bspreads to a sixth province\b/gi,"has reached a sixth province")
+    .replace(/\binfections pass ([\d,]+)\b/gi,"reported infections have exceeded $1")
+    .replace(/\bover ([\d,]+) dead\b/gi,"more than $1 deaths have been reported")
+    .replace(/\bcaused by new ['’]animal transmission['’]\b/gi,"linked to a new animal-to-human transmission event");
+  return sentence(t);
+}
+function claimSentence(f:ResearchFinding,graph:ResearchGraph,index:number){
   const p=clean(f.predicate.replace(/[_-]+/g," "));
   const v=clean(f.valueText||f.statement||"");
   const source=findingSource(f,graph);
   if(/^(recent reporting|external context)$/i.test(p)){
-    return sentence(synthesizeReportingFinding(v,graph.canonicalSubject,source?.name,domain,index));
+    const fact=paraphraseHeadline(v);
+    const attribution=source?.name?` ${source.name} is among the sources supporting this update.`:"";
+    return clean(fact+attribution);
   }
   if(v&&p){
-    if(index%3===0)return sentence(`For ${p.toLowerCase()}, the evidence records ${v}`);
-    if(index%3===1)return sentence(`The verified value attached to ${p.toLowerCase()} is ${v}`);
-    return sentence(`${p.charAt(0).toUpperCase()+p.slice(1)} is represented in the research graph as ${v}`);
+    if(index%3===0)return sentence(`${v} is the current evidence attached to ${p.toLowerCase()}`);
+    if(index%3===1)return sentence(`The evidence on ${p.toLowerCase()} points to ${v}`);
+    return sentence(`${p.charAt(0).toUpperCase()+p.slice(1)} is reported as ${v}`);
   }
   return sentence(v);
 }
@@ -35,8 +50,17 @@ function selectedFindings(graph:ResearchGraph,ids:string[],fallback=6){
   const selected=ids.map(id=>byId.get(id)).filter((x):x is ResearchFinding=>Boolean(x));
   return selected.length?selected:graph.findings.slice(0,fallback);
 }
-function paragraph(findings:ResearchFinding[],graph:ResearchGraph,domain:ReturnType<typeof detectWritingDomain>,max=4){
-  return findings.slice(0,max).map((f,i)=>claimSentence(f,graph,i,domain)).join(" ");
+function paragraph(findings:ResearchFinding[],graph:ResearchGraph,max=4){
+  return findings.slice(0,max).map((f,i)=>claimSentence(f,graph,i)).join(" ");
+}
+function meaningFor(audience:PublicationAudience,graph:ResearchGraph){
+  const subject=graph.canonicalSubject;
+  if(audience==="investor")return `The significance is not the headline alone but whether ${subject} changes economic expectations, operating risk, or policy responses. The evidence here supports the event itself more strongly than any downstream market forecast.`;
+  if(audience==="executive")return `For decision-makers, the useful signal is the scale and direction of the event: whether it is spreading, accelerating, or triggering institutional response. Those are the points that can change planning before longer-range effects are clear.`;
+  if(audience==="developer")return `The practical lesson is to separate the observed event from any system-level consequence. The evidence establishes the event and its current scale; implementation consequences still depend on the specific system or organization.`;
+  if(audience==="marketer")return `The evidence supports the event, not assumptions about audience behavior. Any communications response should distinguish verified developments from speculation about how people will react.`;
+  if(audience==="student")return `The key is to separate three layers: what has happened, how large it is, and what remains uncertain. That keeps the explanation useful without turning incomplete evidence into a neat but misleading story.`;
+  return `What matters is the combination of scale, spread, and institutional response. Together they show whether ${subject} is a contained event or one that is becoming more consequential.`;
 }
 function headlineFor(graph:ResearchGraph,contract:StoryContract){
   const subject=graph.canonicalSubject.replace(/\b\w/g,m=>m.toUpperCase());
@@ -48,32 +72,31 @@ function headlineFor(graph:ResearchGraph,contract:StoryContract){
     if(/dead|death/i.test(numeric))return `${subject}: Death Toll Passes ${n}`;
   }
   const strongest=facts.find(x=>/deadliest|emergency|sixth province|record/i.test(x));
-  if(strongest&&stripOutletSuffix(strongest).split(/\s+/).length<=16)return stripOutletSuffix(strongest);
+  if(strongest)return stripOutletSuffix(strongest);
   return contract.angle&&contract.angle.length<=110?contract.angle:`What changed in ${graph.canonicalSubject}`;
 }
-function deckFor(graph:ResearchGraph,domain:ReturnType<typeof detectWritingDomain>,allEvidence:string){
-  const families=new Set(graph.sources.map(s=>s.independenceFamily||s.provider)).size;
-  return `Briefs found ${graph.sources.length} eligible sources across ${families} independent source families. ${domainDeckClause(domain,graph.canonicalSubject,allEvidence)}`.slice(0,280);
+function deckFor(graph:ResearchGraph){
+  const names=[...new Set(graph.sources.slice(0,6).map(s=>s.name).filter(Boolean))].slice(0,3);
+  const sourcePhrase=names.length?` Sources include ${names.join(", ")}.`:"";
+  return `Briefs found ${graph.sources.length} eligible sources across ${new Set(graph.sources.map(s=>s.independenceFamily||s.provider)).size} independent source families. The strongest evidence points to a materially worsening situation, while interpretation beyond the reported facts remains limited.${sourcePhrase}`.slice(0,280);
 }
 
 function deterministicDraft(graph:ResearchGraph,audience:PublicationAudience,category:string,contract:StoryContract):ArticleDraft{
-  const allEvidence=evidenceText(graph);
-  const domain=detectWritingDomain(category,graph.canonicalSubject,allEvidence);
   const strongest=selectedFindings(graph,contract.strongestClaimIds);
   const counter=selectedFindings(graph,contract.counterClaimIds,0);
   const openingFindings=strongest.slice(0,3);
   const usedOpening=new Set(openingFindings.map(f=>f.id));
   const evidenceFindings=(strongest.slice(3).length?strongest.slice(3):graph.findings.filter(f=>!usedOpening.has(f.id))).slice(0,4);
 
-  const opening=paragraph(openingFindings,graph,domain,3)||sentence(graph.description)||`The available evidence on ${graph.canonicalSubject} is still too thin for a confident briefing.`;
-  const evidence=paragraph(evidenceFindings,graph,domain,4)||`The remaining evidence does not add a distinct second factual section without repeating the same claims.`;
-  const meaning=domainMeaning(domain,graph.canonicalSubject);
+  const opening=paragraph(openingFindings,graph,3)||sentence(graph.description)||`The available evidence on ${graph.canonicalSubject} is still too thin for a confident briefing.`;
+  const evidence=paragraph(evidenceFindings,graph,4)||`The remaining evidence does not add a distinct second factual section without repeating the same claims.`;
+  const meaning=meaningFor(audience,graph);
   const uncertainty=graph.missingEvidence.length
     ? `The main unresolved issue is ${graph.missingEvidence.slice(0,2).join(" ")}`
     : counter.length
-      ? `Some evidence complicates the simplest reading. ${paragraph(counter,graph,domain,2)}`
+      ? `Some evidence complicates the simplest reading. ${paragraph(counter,graph,2)}`
       : `The current evidence is strong on the reported event, but weaker on downstream consequences that have not yet been directly observed.`;
-  const watch=domainWatch(domain,graph.canonicalSubject,allEvidence);
+  const watch=`The next material update would be a verified change in scale, geography, mortality, transmission, or official response. Until then, the safest reading is to treat the current figures and institutional assessments as the boundary of what is known.`;
   const method=`Briefs built this briefing from ${graph.findings.length} structured findings across ${graph.sources.length} eligible sources and ${new Set(graph.sources.map(s=>s.independenceFamily||s.provider)).size} independent source families.`;
 
   const answer:ArticleSectionDraft={key:"brief",heading:"What changed",body:opening,claimIds:openingFindings.map(f=>f.id),purpose:"answer"};
@@ -83,7 +106,8 @@ function deterministicDraft(graph:ResearchGraph,audience:PublicationAudience,cat
   const watchSection:ArticleSectionDraft={key:"watch",heading:"What to watch next",body:watch,claimIds:[],purpose:"analysis"};
   const methodSection:ArticleSectionDraft={key:"method",heading:"How Briefs reached this",body:method,claimIds:[],purpose:"method"};
 
-  // Daily distinctiveness affects article form as well as angle selection.
+  // Daily distinctiveness must affect article form as well as angle selection.
+  // Each variation stays reader-ready; angleKey only changes presentation order.
   const sections=contract.angleKey==="uncertainty"
     ? [answer,limitsSection,evidenceSection,meaningSection,watchSection,methodSection]
     : contract.angleKey==="strongest-fact"
@@ -98,7 +122,7 @@ function deterministicDraft(graph:ResearchGraph,audience:PublicationAudience,cat
 
   return {
     title:headlineFor(graph,contract),
-    deck:deckFor(graph,domain,allEvidence),
+    deck:deckFor(graph),
     category,
     audience,
     articleType:articleType(graph),

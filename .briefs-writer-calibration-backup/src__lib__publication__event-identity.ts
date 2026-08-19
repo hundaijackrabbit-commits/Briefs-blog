@@ -16,7 +16,7 @@ const ACTION_GROUPS:Record<string,string[]>={
   regulate:["regulate","regulates","regulated","regulation","regulations","law","laws","legislation","ban","bans","banned","approve","approves","approved"],
   merge:["merge","merger","mergers","acquisition","acquisitions","takeover","takeovers"],
   fail:["bankruptcy","bankrupt","default","defaults","collapse","collapses","collapsed"],
-  move:["raise","raises","raised","cut","cuts","lower","lowers","increase","increases","decrease","decreases","hit","hits","reach","reaches","reached","rise","rises","rose","risen","fall","falls","fell","fallen","slide","slides","slid","climb","climbs","climbed","jump","jumps","jumped","soar","soars","soared"],
+  move:["raise","raises","raised","cut","cuts","lower","lowers","increase","increases","decrease","decreases"],
   outbreak:["outbreak","outbreaks","spread","spreads","spreading","infect","infects","infection","infections","transmission","cases"],
   die:["dead","death","deaths","dies","died","fatalities","killed","kills"],
   warn:["warn","warns","warned","warning","declare","declares","declared","emergency"],
@@ -32,18 +32,9 @@ for(const [canonical,words] of Object.entries(ACTION_GROUPS))for(const word of w
 function clean(value:string){return value.toLowerCase().replace(/[’']/g,"").replace(/[^a-z0-9\s-]/g," ").replace(/-/g," ").replace(/\s+/g," ").trim();}
 function stem(word:string){let w=word.toLowerCase();if(w.length>6&&w.endsWith("ing"))w=w.slice(0,-3);else if(w.length>5&&w.endsWith("ed"))w=w.slice(0,-2);else if(w.length>4&&w.endsWith("es"))w=w.slice(0,-2);else if(w.length>4&&w.endsWith("s"))w=w.slice(0,-1);return w;}
 function unique<T>(items:T[]){return [...new Set(items)];}
-function overlapRatio(anchor:string[],text:Set<string>){if(!anchor.length)return 0;let hit=0;for(const term of anchor)if(text.has(term))hit++;return hit/anchor.length;}
+function overlapRatio(anchor:string[],text:Set<string>){if(!anchor.length)return 1;let hit=0;for(const term of anchor)if(text.has(term))hit++;return hit/anchor.length;}
 function geoTerms(value:string){const lower=` ${clean(value)} `;return unique(GEO_PHRASES.filter(term=>lower.includes(` ${term} `)).map(term=>term.toLowerCase()));}
 function canonicalAction(word:string){return ACTION_LOOKUP.get(word)||ACTION_LOOKUP.get(stem(word))||null;}
-
-function supportedGeography(subject:string,titles:string[]){
-  const direct=geoTerms(subject);
-  if(direct.length)return direct;
-  const counts=new Map<string,number>();
-  for(const title of titles)for(const term of new Set(geoTerms(title)))counts.set(term,(counts.get(term)||0)+1);
-  const minimum=Math.max(2,Math.ceil(Math.max(1,titles.length)*.5));
-  return [...counts.entries()].filter(([,count])=>count>=minimum).sort((a,b)=>b[1]-a[1]).map(([term])=>term);
-}
 
 export function eventTokens(value:string){
   return clean(value).split(/\s+/).filter(Boolean).map(word=>ACTION_LOOKUP.get(word)||stem(word)).filter(word=>word.length>2&&!STOP.has(word)&&!GENERIC.has(word));
@@ -51,7 +42,7 @@ export function eventTokens(value:string){
 
 export function buildEventAnchor(subject:string,titles:string[]=[subject],eventTime:string|null=null):ResearchEventAnchor{
   const subjectWords=clean(subject).split(/\s+/).filter(Boolean);
-  const geographyTerms=supportedGeography(subject,titles);
+  const geographyTerms=geoTerms([subject,...titles].join(" "));
   const geographyTokenSet=new Set(geographyTerms.flatMap(term=>term.split(" ").map(stem)));
   const rawDistinctive=subjectWords.map(stem).filter(word=>word.length>2&&!STOP.has(word)&&!GENERIC.has(word)&&!GEO_TOKENS.has(word)&&!geographyTokenSet.has(word));
   const actionTerms=unique(subjectWords.map(canonicalAction).filter((x):x is string=>Boolean(x)));
@@ -67,13 +58,10 @@ export function eventAlignmentComponents(anchor:ResearchEventAnchor,text:string)
   const textGeo=new Set(geoTerms(text));
   const topic=overlapRatio(anchor.topicTerms,textTokens);
   const action=overlapRatio(anchor.actionTerms,textTokens);
-  const geography=overlapRatio(anchor.geographyTerms,textGeo);
+  const geography=anchor.geographyTerms.length?overlapRatio(anchor.geographyTerms,textGeo):1;
   const distinctive=overlapRatio(anchor.distinctiveTerms,textTokens);
   const matchedDistinctive=anchor.distinctiveTerms.filter(term=>textTokens.has(term));
-  let weighted=topic*65,totalWeight=65;
-  if(anchor.actionTerms.length){weighted+=action*25;totalWeight+=25;}
-  if(anchor.geographyTerms.length){weighted+=geography*10;totalWeight+=10;}
-  let score=totalWeight?weighted/totalWeight*100:0;
+  let score=topic*65+action*25+geography*10;
   if(anchor.topicTerms.length>=1&&matchedDistinctive.length===0)score=0;
   if(anchor.topicTerms.length>=2&&topic===0)score=Math.min(score,25);
   if(anchor.actionTerms.length&&action===0&&topic<.5)score=Math.min(score,42);

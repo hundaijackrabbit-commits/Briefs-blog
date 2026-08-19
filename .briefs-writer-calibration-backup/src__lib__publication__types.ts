@@ -84,32 +84,12 @@ export type OpportunityScore = {
   rationale: string[];
 };
 
-export type OriginalitySourceInput={
-  sourceId:string;
-  sourceName:string;
-  sourceTitle:string;
-  text:string;
-};
-
-export type OriginalityMatchDiagnostic={
-  scope:"source"|"library";
-  risk:number;
-  matchingWords:number;
-  phrase:string;
-  sourceId?:string;
-  sourceName?:string;
-  sourceTitle?:string;
-  articleId?:string;
-  articleTitle?:string;
-};
-
 export type OriginalityReport = {
   passed: boolean;
   maxSourceOverlap: number;
   maxLibraryOverlap: number;
   longestMatchingWords: number;
   warnings: string[];
-  diagnostics:{strongestSourceMatch?:OriginalityMatchDiagnostic;strongestLibraryMatch?:OriginalityMatchDiagnostic};
 };
 
 export type AudienceFitReport={
