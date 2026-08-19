@@ -76,7 +76,8 @@ export function eventAlignmentComponents(anchor:ResearchEventAnchor,text:string)
   const geography=overlapRatio(anchor.geographyTerms,textGeo);
   const distinctive=overlapRatio(anchor.distinctiveTerms,textTokens);
   const matchedDistinctive=anchor.distinctiveTerms.filter(term=>textTokens.has(term));
-  let weighted=topic*65,totalWeight=65;
+  let weighted=0,totalWeight=0;
+  if(anchor.topicTerms.length){weighted+=topic*65;totalWeight+=65;}
   if(anchor.actionTerms.length){weighted+=action*25;totalWeight+=25;}
   if(anchor.geographyTerms.length){weighted+=geography*10;totalWeight+=10;}
   let score=totalWeight?weighted/totalWeight*100:0;

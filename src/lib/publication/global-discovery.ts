@@ -1,6 +1,7 @@
 import { fetchJson, stableResearchId } from "@/lib/research/http";
 import type { GlobalArticleSeed,GlobalCategory,GlobalEventCandidate,GlobalRegion } from "@/lib/publication/global-types";
 import { anchorPreservingQuery,buildEventAnchor,clusterCoherenceScore,titleEventAlignment } from "@/lib/publication/event-identity";
+import { evaluateCandidateIntegrity } from "@/lib/publication/candidate-integrity";
 
 // Discovery sources are signals only. They may propose events, but never establish facts by themselves.
 type GdeltArticle={url?:string;title?:string;seendate?:string;domain?:string;sourcecountry?:string};
@@ -190,8 +191,9 @@ function clusterSeeds(seeds:GlobalArticleSeed[]):GlobalEventCandidate[]{
     for(const seed of coherentSeeds)categoryCounts.set(seed.category,(categoryCounts.get(seed.category)||0)+1);
     const category=[...categoryCounts.entries()].sort((a,b)=>b[1]-a[1])[0]?.[0]||cluster.category;
     const researchQuery=anchorPreservingQuery(bestResearchPhrase(titles),eventAnchor);
-    return {eventKey:stableResearchId("world",eventSignature(titles)),subject:titles[0],researchQuery,eventAnchor,clusterCoherence,category,titles:titles.slice(0,12),urls:urls.slice(0,30),domains:domains.slice(0,30),sourceCountries:countries.slice(0,30),regions:regions.length?regions:(["Global"] as GlobalRegion[]),mentionCount:urls.length,newestAt:newest};
-  }).filter(candidate=>candidate.mentionCount<2||candidate.clusterCoherence>=52).sort((a,b)=>b.domains.length-a.domains.length||b.mentionCount-a.mentionCount).slice(0,120);
+    const integrity=evaluateCandidateIntegrity({eventAnchor,titles,clusterCoherence});
+    return {eventKey:stableResearchId("world",eventSignature(titles)),subject:titles[0],researchQuery,eventAnchor,clusterCoherence,...integrity,category,titles:titles.slice(0,12),urls:urls.slice(0,30),domains:domains.slice(0,30),sourceCountries:countries.slice(0,30),regions:regions.length?regions:(["Global"] as GlobalRegion[]),mentionCount:urls.length,newestAt:newest};
+  }).filter(candidate=>candidate.candidateIntegrityPassed).sort((a,b)=>Number(b.candidateIntegrityScore||0)-Number(a.candidateIntegrityScore||0)||b.domains.length-a.domains.length||b.mentionCount-a.mentionCount).slice(0,120);
 }
 
 async function collectBatched(

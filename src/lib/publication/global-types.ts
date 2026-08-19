@@ -19,6 +19,13 @@ export type GlobalEventCandidate = {
   researchQuery:string;
   eventAnchor:ResearchEventAnchor;
   clusterCoherence:number;
+  candidateIntegrityScore?:number;
+  candidateIntegrityPassed?:boolean;
+  eventhoodScore?:number;
+  pairwiseCoherence?:number;
+  highSignalTerms?:string[];
+  highSignalSupport?:number;
+  integrityReasons?:string[];
   category:GlobalCategory;
   titles:string[];
   urls:string[];

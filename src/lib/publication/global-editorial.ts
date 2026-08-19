@@ -143,8 +143,12 @@ export async function runGlobalEditorialSelection(options:{force?:boolean;draft?
     }
 
     const ranked=await rankGlobalCandidates(discovered);
-    const viable=ranked.filter(candidate=>candidate.domains.length>=2&&candidate.evidenceBreadth>=42&&candidate.finalScore>=55);
-    const rankedPool=(viable.length?viable:ranked).slice(0,40);
+    const viable=ranked.filter(candidate=>candidate.candidateIntegrityPassed===true&&Number(candidate.candidateIntegrityScore||0)>=60&&candidate.domains.length>=2&&candidate.evidenceBreadth>=42&&candidate.finalScore>=55);
+    if(!viable.length){
+      await sql`update publication_global_runs set status='failed',error_summary='No candidate passed discovery-integrity and global importance gates',completed_at=now() where id=${runId}::uuid`;
+      return {status:"research-required",editorialDay:day,reason:"No candidate passed discovery-integrity and global importance gates"};
+    }
+    const rankedPool=viable.slice(0,40);
     const seenEventKeys=new Set<string>();
     const shortlist=rankedPool.filter(candidate=>{if(seenEventKeys.has(candidate.eventKey))return false;seenEventKeys.add(candidate.eventKey);return true;}).slice(0,30);
     if(!shortlist.length){

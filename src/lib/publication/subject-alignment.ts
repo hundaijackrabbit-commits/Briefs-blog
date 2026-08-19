@@ -71,14 +71,15 @@ export function evaluateResearchAlignment(args:{graph:ResearchGraph;anchor:Resea
   const alignedFamilies=new Set(alignedSources.map(family)).size;
   const alignedTexts=alignedSources.map(source=>new Set(eventTokens(rawSourceText(source))));
   const entityCoverage=coverage(anchor.topicTerms,alignedTexts);
-  const actionCoverage=coverage(anchor.actionTerms,alignedTexts);
+  const actionCoverage=anchor.actionTerms.length?coverage(anchor.actionTerms,alignedTexts):0;
+  const compositeActionCoverage=anchor.actionTerms.length?actionCoverage:100;
   const temporal=alignedSources.length?clamp(sourceScores.filter(x=>x.passed).reduce((sum,x)=>sum+x.temporal,0)/alignedSources.length):0;
   const average=alignedSources.length?sourceScores.filter(x=>x.passed).reduce((sum,x)=>sum+x.score,0)/alignedSources.length:0;
   const coverageRatio=graph.sources.length?alignedSources.length/graph.sources.length:0;
   const familyScore=clamp(alignedFamilies/3*100);
   const coherence=args.clusterCoherence??85;
   const eventhood=eventhoodScore(anchor,graph.sources.map(s=>s.title));
-  const score=clamp(average*.42+entityCoverage*.14+actionCoverage*.09+temporal*.10+coverageRatio*100*.10+familyScore*.05+coherence*.05+eventhood*.05);
+  const score=clamp(average*.42+entityCoverage*.14+compositeActionCoverage*.09+temporal*.10+coverageRatio*100*.10+familyScore*.05+coherence*.05+eventhood*.05);
 
   const reasons:string[]=[];
   if(alignedSources.length<3)reasons.push(`Only ${alignedSources.length} source(s) matched the selected event from their own title/excerpt evidence; at least 3 are required.`);

@@ -315,3 +315,15 @@ V10 closes the ten-version MVP roadmap. Future work is normal post-MVP iteration
 - Factual Section Distribution Gate — operational; stories with three or more findings require at least two separately claim-backed factual sections
 - Empty Evidence Placeholder Block — operational; “no distinct second factual section” style placeholders fail publication quality
 - Canonical law — evidence relevance must be earned by the underlying source material; metadata assigned by Briefs cannot validate itself
+
+## Publication Engine 1.2.2 — Discovery Candidate Integrity
+- High-Signal Anchor Filter — operational; generic framing terms such as `piece`, `supply`, `chain`, `market`, and `industry` cannot establish event identity on their own
+- Candidate Eventhood Gate — operational; eventhood is evaluated before a discovery candidate can reach deep research
+- Candidate Pairwise Coherence — operational; source headlines must agree with one another, not merely with a broad seed
+- High-Signal Support Count — operational; multi-source candidates require independent title-level support for distinctive event terms or a concrete action
+- Discovery Integrity Score — operational; cluster coherence, eventhood, pairwise agreement, high-signal support, and anchor agreement are combined into an upstream integrity score
+- Integrity-Aware Ranking — operational; discovery integrity adjusts final ranking before deep research
+- No Unsafe Viability Fallback — operational; if no candidate passes integrity + global-importance viability gates, the daily pipeline fails closed instead of researching a weak fallback
+- Dynamic Event Alignment Dimensions — operational; absent topic, action, or geography dimensions do not dilute event-match scores
+- Action Coverage Telemetry Fix — operational; absent action terms now report 0 coverage while remaining neutral in the composite alignment score
+- Canonical law — deep research is reserved for candidates that already demonstrate a coherent, observable event in discovery signals

@@ -18,8 +18,10 @@ function scoreWithHistory(candidate:GlobalEventCandidate,recent:RecentFlagship[]
   const sameCategoryYesterday=recent[0]?.category===candidate.category;const recentCategoryCount=recent.slice(0,5).filter(row=>row.category===candidate.category).length;
   const override=materialChange(candidate,closest,maxSim);let repeatPenalty=0;if(maxSim>=.72)repeatPenalty+=override?8:34;else if(maxSim>=.55)repeatPenalty+=override?5:24;else if(maxSim>=.40)repeatPenalty+=10;if(sameCategoryYesterday)repeatPenalty+=5;if(recentCategoryCount>=3)repeatPenalty+=6;
   const distinctivenessScore=clamp(100-maxSim*92-(sameCategoryYesterday?8:0)-Math.max(0,recentCategoryCount-2)*5+(override?16:0));
-  const finalScore=clamp(importance.importanceScore*.74+distinctivenessScore*.18+importance.evidenceBreadth*.08-repeatPenalty*.55);
-  const rationale=[...importance.rationale,`60-day distinctiveness ${distinctivenessScore}/100`,maxSim?`closest recent flagship similarity ${Math.round(maxSim*100)}%`:`no similar flagship found`,repeatPenalty?`repeat penalty -${repeatPenalty}`:"no repeat penalty",override?"material world-state change overrides most repetition penalty":"no material-change override needed"];
+  const integrityScore=Number(candidate.candidateIntegrityScore||0);
+  const integrityAdjustment=(integrityScore-70)*.12;
+  const finalScore=clamp(importance.importanceScore*.74+distinctivenessScore*.18+importance.evidenceBreadth*.08-repeatPenalty*.55+integrityAdjustment);
+  const rationale=[...importance.rationale,`discovery integrity ${integrityScore}/100`,`candidate eventhood ${Number(candidate.eventhoodScore||0)}/100`,`pairwise coherence ${Number(candidate.pairwiseCoherence||0)}/100`,`60-day distinctiveness ${distinctivenessScore}/100`,maxSim?`closest recent flagship similarity ${Math.round(maxSim*100)}%`:`no similar flagship found`,repeatPenalty?`repeat penalty -${repeatPenalty}`:"no repeat penalty",override?"material world-state change overrides most repetition penalty":"no material-change override needed"];
   return {...candidate,...importance,distinctivenessScore,repeatPenalty,finalScore,materialChangeOverride:override,rationale};
 }
 
