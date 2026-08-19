@@ -58,7 +58,7 @@ async function selectCandidate(day:string,runId:string,candidateId:string,candid
   const sql=db();
   await sql`update publication_global_candidates set selected=false,updated_at=now() where run_id=${runId}::uuid`;
   await sql`update publication_global_candidates set selected=true,status=case when status='research-blocked' then status else 'selected' end,updated_at=now() where id=${candidateId}::uuid`;
-  const rationale=[...candidate.rationale,...extraRationale];
+  const rationale=[...candidate.rationale,...extraRationale,`cluster coherence ${candidate.clusterCoherence}/100`,`event anchor: ${candidate.eventAnchor.distinctiveTerms.join(", ")}`];
   await sql`
     insert into publication_daily_flagships(
       editorial_day,run_id,candidate_id,subject,research_query,category,importance_score,
@@ -83,7 +83,7 @@ async function draftSelectedCandidate(day:string,candidateId:string,candidate:Gl
   const keyword=await ensureFlagshipKeyword(candidate);
   let result:Record<string,unknown>={};
   try{
-    result=await researchKeyword(keyword.id) as unknown as Record<string,unknown>;
+    result=await researchKeyword(keyword.id,{selectedSubject:candidate.subject,anchorTitles:candidate.titles,eventAnchor:candidate.eventAnchor,clusterCoherence:candidate.clusterCoherence}) as unknown as Record<string,unknown>;
   }catch(error){
     const message=error instanceof Error?error.message:String(error);
     await sql`update publication_global_candidates set status='research-blocked',updated_at=now() where id=${candidateId}::uuid`;

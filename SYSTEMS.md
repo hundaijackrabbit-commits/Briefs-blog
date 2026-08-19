@@ -279,3 +279,18 @@ V10 closes the ten-version MVP roadmap. Future work is normal post-MVP iteration
 - Autonomous Daily Article Exclusivity — operational; scheduled watched-keyword research creates opportunities but does not draft competing articles, reserving the automatic daily writing slot for the global flagship
 - Publishability Fallback — operational; if the highest-ranked world event fails deep research/article gates, up to two lower-ranked candidates may be attempted and the fallback reason is persisted
 - Angle-form Distinctiveness — operational; recent Story Contract angle keys are penalized and deterministic section structure varies by angle so daily differentiation is not only topical
+
+## Publication Engine 1.2.2 — Event Identity & Research Alignment
+- Event Identity Engine — operational deterministic foundation; each global candidate carries an immutable event anchor with distinctive topic/entity terms, canonical action terms, geography and event time
+- Cluster Coherence Gate — operational; broad regional similarity cannot by itself merge unrelated headlines into one event candidate
+- Anchor-Preserving Retrieval — operational; research queries may broaden discovery but may not redefine the selected event
+- Research Subject Alignment Engine — operational; every publication research source is scored against the selected event before source counts, family diversity, story scoring or writer context
+- Negative Event-Match Penalty — operational foundation; unrelated event classes actively reduce relevance even when geography overlaps
+- Temporal Alignment Gate — operational foundation; current/live research distinguishes current, aging and stale aligned evidence
+- Alignment-First Source Diversity — canonical; source authority and independence are evaluated only after event relevance is established
+- Graph Alignment Gate — operational; autonomous flagship drafting requires sufficient aligned sources, independent aligned families, coverage and an overall alignment score
+- Bounded Alignment Repair — operational; failed first-pass alignment triggers at most two anchor-preserving repair queries and reranks the resulting graphs
+- Alignment Provenance / Telemetry — operational through persisted research graph JSON; selected subject, anchor, attempted queries, per-source scores, rejected/stale IDs and aggregate metrics are retained
+- Near-Miss Regression Suite — operational; explicitly guards against same-geography/wrong-event retrieval and broad-query collapse
+- Canonical law — broad context can expand discovery, but it cannot redefine the event
+- Canonical law — source authority and diversity are evaluated only after event relevance is established

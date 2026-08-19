@@ -1,8 +1,11 @@
 import { db } from "@/lib/db";
 import { researchSubject } from "@/lib/research/research-engine";
+import type { ResearchEventAnchor,ResearchGraph,ResearchSubjectAlignment } from "@/lib/research/types";
 import type { BriefRequest } from "@/lib/types";
 import type { PublicationResearch } from "@/lib/publication/types";
 import { primarySourceCount, scoreOpportunity, sourceFamilies } from "@/lib/publication/scoring";
+import { alignmentQueryVariants,anchorPreservingQuery,buildEventAnchor } from "@/lib/publication/event-identity";
+import { applyResearchAlignment,evaluateResearchAlignment } from "@/lib/publication/subject-alignment";
 
 function normalizedWords(text: string) {
   return new Set(text.toLowerCase().replace(/[^a-z0-9\s]/g, " ").split(/\s+/).filter(x => x.length > 2));
@@ -19,8 +22,47 @@ async function libraryCompetition(subject:string){
   }catch{return {novelty:75,saturationPenalty:0};}
 }
 
-export async function researchForPublication(keyword:string,audience="smart-generalist",freshnessHours=48):Promise<PublicationResearch>{
-  const request:BriefRequest={subject:keyword,depth:"research",perspective:audience==="investor"?"investor":audience==="executive"?"executive":audience==="developer"?"developer":audience==="student"?"student":audience==="marketer"?"marketer":"general",sourcePolicy:"verified",freshnessRequirement:freshnessHours<=72?"recent":"current",format:"web"};
-  const graph=await researchSubject(request);const competition=await libraryCompetition(graph.canonicalSubject||keyword);const opportunity=scoreOpportunity(graph,competition.novelty,82,competition.saturationPenalty);
+type PublicationResearchOptions={
+  selectedSubject?:string;
+  anchorTitles?:string[];
+  eventAnchor?:ResearchEventAnchor;
+  clusterCoherence?:number;
+};
+
+function requestFor(subject:string,audience:string,freshnessHours:number):BriefRequest{
+  return {subject,depth:"research",perspective:audience==="investor"?"investor":audience==="executive"?"executive":audience==="developer"?"developer":audience==="student"?"student":audience==="marketer"?"marketer":"general",sourcePolicy:"verified",freshnessRequirement:freshnessHours<=72?"recent":"current",format:"web"};
+}
+
+async function alignedPublicationGraph(keyword:string,audience:string,freshnessHours:number,options:PublicationResearchOptions){
+  const selectedSubject=String(options.selectedSubject||"").trim();
+  if(!selectedSubject)return {graph:await researchSubject(requestFor(keyword,audience,freshnessHours)),alignment:undefined as ResearchSubjectAlignment|undefined};
+
+  const anchor=options.eventAnchor||buildEventAnchor(selectedSubject,[selectedSubject,...(options.anchorTitles||[])],null);
+  const initialQuery=anchorPreservingQuery(keyword,anchor);
+  const attempted=[initialQuery];
+  const initialGraph=await researchSubject(requestFor(initialQuery,audience,freshnessHours));
+  let bestGraph:ResearchGraph=initialGraph;
+  let bestAlignment=evaluateResearchAlignment({graph:initialGraph,anchor,selectedSubject,queries:attempted,clusterCoherence:options.clusterCoherence,repaired:false});
+
+  if(!bestAlignment.passed){
+    const variants=alignmentQueryVariants(anchor,keyword).filter(query=>query.toLowerCase()!==initialQuery.toLowerCase()).slice(0,2);
+    attempted.push(...variants);
+    const repairs=await Promise.all(variants.map(async query=>{
+      const graph=await researchSubject(requestFor(query,audience,freshnessHours));
+      const alignment=evaluateResearchAlignment({graph,anchor,selectedSubject,queries:attempted,clusterCoherence:options.clusterCoherence,repaired:true});
+      return {graph,alignment};
+    }));
+    for(const repair of repairs)if(repair.alignment.score>bestAlignment.score){bestGraph=repair.graph;bestAlignment=repair.alignment;}
+  }
+
+  bestAlignment={...bestAlignment,queries:[...new Set(attempted)],repaired:bestGraph!==initialGraph};
+  return {graph:applyResearchAlignment(bestGraph,bestAlignment),alignment:bestAlignment};
+}
+
+export async function researchForPublication(keyword:string,audience="smart-generalist",freshnessHours=48,options:PublicationResearchOptions={}):Promise<PublicationResearch>{
+  const aligned=await alignedPublicationGraph(keyword,audience,freshnessHours,options);
+  const graph=aligned.graph;
+  const competition=await libraryCompetition(options.selectedSubject||graph.canonicalSubject||keyword);
+  const opportunity=scoreOpportunity(graph,competition.novelty,82,competition.saturationPenalty);
   return {graph,opportunity,primarySourceCount:primarySourceCount(graph),independentFamilies:sourceFamilies(graph),saturationPenalty:competition.saturationPenalty};
 }

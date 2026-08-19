@@ -38,6 +38,52 @@ export type ResearchFinding={
   verificationStatus:"confirmed"|"corroborated"|"reported"|"unverified";
 };
 
+export type ResearchEventAnchor={
+  version:"1.0";
+  subject:string;
+  distinctiveTerms:string[];
+  actionTerms:string[];
+  topicTerms:string[];
+  geographyTerms:string[];
+  entityTerms:string[];
+  eventTime:string|null;
+};
+
+export type ResearchSourceAlignment={
+  sourceId:string;
+  score:number;
+  topic:number;
+  action:number;
+  geography:number;
+  temporal:number;
+  temporalStatus:"current"|"aging"|"stale";
+  corroboration:number;
+  negativePenalty:number;
+  matchedDistinctive:string[];
+  passed:boolean;
+};
+
+export type ResearchSubjectAlignment={
+  version:"1.0";
+  selectedSubject:string;
+  anchor:ResearchEventAnchor;
+  queries:string[];
+  sourceScores:ResearchSourceAlignment[];
+  alignedSourceIds:string[];
+  rejectedSourceIds:string[];
+  staleSourceIds:string[];
+  alignedFamilies:number;
+  score:number;
+  entityCoverage:number;
+  actionCoverage:number;
+  temporalAlignment:number;
+  coverageRatio:number;
+  clusterCoherence:number|null;
+  passed:boolean;
+  repaired:boolean;
+  reasons:string[];
+};
+
 export type ResearchGraph={
   runId:string;
   plan:ResearchQueryPlan;
@@ -54,6 +100,7 @@ export type ResearchGraph={
   iterations?:{iteration:number;gapKind:string;reason:string;nextQuery:string}[];
   comparison?:{subject:string;summary:string;factCount:number;sourceCount:number}[];
   stopReason?:"sufficient"|"budget"|"no-progress"|"provider-limits";
+  alignment?:ResearchSubjectAlignment;
   persisted?:boolean;
 };
 

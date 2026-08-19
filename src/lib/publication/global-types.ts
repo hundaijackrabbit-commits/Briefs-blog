@@ -1,3 +1,5 @@
+import type { ResearchEventAnchor } from "@/lib/research/types";
+
 export type GlobalCategory = "World"|"Business"|"Markets"|"Technology"|"Science"|"Policy"|"Culture";
 export type GlobalRegion = "North America"|"Latin America"|"Europe"|"Africa"|"Middle East"|"South Asia"|"East Asia"|"Southeast Asia"|"Oceania"|"Global";
 
@@ -15,6 +17,8 @@ export type GlobalEventCandidate = {
   eventKey:string;
   subject:string;
   researchQuery:string;
+  eventAnchor:ResearchEventAnchor;
+  clusterCoherence:number;
   category:GlobalCategory;
   titles:string[];
   urls:string[];

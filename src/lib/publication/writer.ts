@@ -106,13 +106,27 @@ function deterministicDraft(graph:ResearchGraph,audience:PublicationAudience,cat
   const watchSection:ArticleSectionDraft={key:"watch",heading:"What to watch next",body:watch,claimIds:[],purpose:"analysis"};
   const methodSection:ArticleSectionDraft={key:"method",heading:"How Briefs reached this",body:method,claimIds:[],purpose:"method"};
 
+  // Daily distinctiveness must affect article form as well as angle selection.
+  // Each variation stays reader-ready; angleKey only changes presentation order.
+  const sections=contract.angleKey==="uncertainty"
+    ? [answer,limitsSection,evidenceSection,meaningSection,watchSection,methodSection]
+    : contract.angleKey==="strongest-fact"
+      ? [answer,evidenceSection,meaningSection,limitsSection,watchSection,methodSection]
+      : contract.angleKey==="connection"
+        ? [answer,meaningSection,evidenceSection,limitsSection,watchSection,methodSection]
+        : contract.angleKey==="consequence"
+          ? [answer,meaningSection,watchSection,evidenceSection,limitsSection,methodSection]
+          : contract.angleKey==="difference"
+            ? [answer,evidenceSection,meaningSection,watchSection,limitsSection,methodSection]
+            : [answer,meaningSection,evidenceSection,limitsSection,watchSection,methodSection];
+
   return {
     title:headlineFor(graph,contract),
     deck:deckFor(graph),
     category,
     audience,
     articleType:articleType(graph),
-    sections:[answer,meaningSection,evidenceSection,limitsSection,watchSection,methodSection],
+    sections,
     claimIds:[...new Set([answer,evidenceSection,limitsSection].flatMap(section=>section.claimIds))],
     generatedBy:"briefs-deterministic"
   };

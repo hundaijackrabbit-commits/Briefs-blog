@@ -78,7 +78,7 @@ export function evaluatePublicationQuality(args:{draft:ArticleDraft;graph:Resear
   if(!originality.passed)blockers.push("Originality gate failed.");
   if(unsupportedClaimIds.length)blockers.push(`${unsupportedClaimIds.length} draft claim reference(s) are not present in the research graph.`);
   if(factualUngrounded.length)blockers.push(`${factualUngrounded.length} factual section(s) lack claim-level grounding.`);
-  if(!graph.sufficient)blockers.push("Research is not sufficient to support publication.");
+  if(graph.alignment&&!graph.alignment.passed)blockers.push(`Research subject alignment ${graph.alignment.score}/100 failed: ${graph.alignment.reasons.join(" ")}`);if(!graph.sufficient)blockers.push("Research is not sufficient to support publication.");
   if(args.storyScore<args.minStoryScore)blockers.push(`Story score ${args.storyScore} is below the ${args.minStoryScore} threshold.`);
   if(voice.score<76)blockers.push("Voice quality is below the V10.2 publication threshold.");
   if(audience.score<76)blockers.push("Audience fit is below the V10.2 publication threshold.");

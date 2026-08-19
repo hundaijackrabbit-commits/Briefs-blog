@@ -1,5 +1,6 @@
 import { fetchJson, stableResearchId } from "@/lib/research/http";
 import type { GlobalArticleSeed,GlobalCategory,GlobalEventCandidate,GlobalRegion } from "@/lib/publication/global-types";
+import { anchorPreservingQuery,buildEventAnchor,clusterCoherenceScore,titleEventAlignment } from "@/lib/publication/event-identity";
 
 // Discovery sources are signals only. They may propose events, but never establish facts by themselves.
 type GdeltArticle={url?:string;title?:string;seendate?:string;domain?:string;sourcecountry?:string};
@@ -153,6 +154,10 @@ async function queryGoogleNews(category:GlobalCategory,query:string):Promise<Glo
 
 function shouldMerge(seed:GlobalArticleSeed,existing:GlobalArticleSeed){
   const sim=similarity(seed.title,existing.title);
+  if(sim>=.58)return true;
+  const anchor=buildEventAnchor(existing.title,[existing.title],existing.publishedAt);
+  const eventMatch=titleEventAlignment(anchor,seed.title);
+  if(eventMatch<45)return false;
   if(sim>=CLUSTER_SIMILARITY_THRESHOLD)return true;
   return seed.category===existing.category&&sim>=CLUSTER_SOFT_THRESHOLD&&sharedTokens(seed.title,existing.title)>=2;
 }
@@ -160,8 +165,33 @@ function shouldMerge(seed:GlobalArticleSeed,existing:GlobalArticleSeed){
 function clusterSeeds(seeds:GlobalArticleSeed[]):GlobalEventCandidate[]{
   const clusters:Array<{seeds:GlobalArticleSeed[];category:GlobalCategory}>=[];
   const ordered=[...seeds].sort((a,b)=>Date.parse(b.publishedAt||"")-Date.parse(a.publishedAt||""));
-  for(const seed of ordered){let best=-1,bestSim=0;for(let i=0;i<clusters.length;i++){const anchor=clusters[i].seeds[0];if(!anchor||!shouldMerge(seed,anchor))continue;const sim=similarity(seed.title,anchor.title);if(sim>bestSim){bestSim=sim;best=i;}}if(best>=0)clusters[best].seeds.push(seed);else clusters.push({seeds:[seed],category:seed.category});}
-  return clusters.map(cluster=>{const titles=[...new Set(cluster.seeds.map(s=>s.title))];const urls=[...new Set(cluster.seeds.map(s=>s.url))];const domains=[...new Set(cluster.seeds.map(s=>s.domain))];const countries=[...new Set(cluster.seeds.map(s=>s.sourceCountry).filter((v):v is string=>Boolean(v)))];const regions:GlobalRegion[]=[...new Set<GlobalRegion>(cluster.seeds.flatMap(s=>s.regionHints))];const categoryCounts=new Map<GlobalCategory,number>();for(const seed of cluster.seeds)categoryCounts.set(seed.category,(categoryCounts.get(seed.category)||0)+1);const category=[...categoryCounts.entries()].sort((a,b)=>b[1]-a[1])[0]?.[0]||cluster.category;const newest=cluster.seeds.map(s=>s.publishedAt).filter((v):v is string=>Boolean(v)).sort().at(-1)||null;const researchQuery=bestResearchPhrase(titles);return {eventKey:stableResearchId("world",eventSignature(titles)),subject:titles[0],researchQuery,category,titles:titles.slice(0,12),urls:urls.slice(0,30),domains:domains.slice(0,30),sourceCountries:countries.slice(0,30),regions:regions.length?regions:(["Global"] as GlobalRegion[]),mentionCount:urls.length,newestAt:newest};}).sort((a,b)=>b.domains.length-a.domains.length||b.mentionCount-a.mentionCount).slice(0,120);
+  for(const seed of ordered){
+    let best=-1,bestSim=0;
+    for(let i=0;i<clusters.length;i++){
+      const anchor=clusters[i].seeds[0];
+      if(!anchor||!shouldMerge(seed,anchor))continue;
+      const sim=similarity(seed.title,anchor.title);
+      if(sim>bestSim){bestSim=sim;best=i;}
+    }
+    if(best>=0)clusters[best].seeds.push(seed);else clusters.push({seeds:[seed],category:seed.category});
+  }
+  return clusters.map(cluster=>{
+    const allTitles=[...new Set(cluster.seeds.map(s=>s.title))];
+    const newest=cluster.seeds.map(s=>s.publishedAt).filter((v):v is string=>Boolean(v)).sort().at(-1)||null;
+    const eventAnchor=buildEventAnchor(allTitles[0]||"",allTitles,newest);
+    const clusterCoherence=clusterCoherenceScore(eventAnchor,allTitles);
+    const coherentSeeds=cluster.seeds.filter((seed,index)=>index===0||titleEventAlignment(eventAnchor,seed.title)>=45);
+    const titles=[...new Set(coherentSeeds.map(s=>s.title))];
+    const urls=[...new Set(coherentSeeds.map(s=>s.url))];
+    const domains=[...new Set(coherentSeeds.map(s=>s.domain))];
+    const countries=[...new Set(coherentSeeds.map(s=>s.sourceCountry).filter((v):v is string=>Boolean(v)))];
+    const regions:GlobalRegion[]=[...new Set<GlobalRegion>(coherentSeeds.flatMap(s=>s.regionHints))];
+    const categoryCounts=new Map<GlobalCategory,number>();
+    for(const seed of coherentSeeds)categoryCounts.set(seed.category,(categoryCounts.get(seed.category)||0)+1);
+    const category=[...categoryCounts.entries()].sort((a,b)=>b[1]-a[1])[0]?.[0]||cluster.category;
+    const researchQuery=anchorPreservingQuery(bestResearchPhrase(titles),eventAnchor);
+    return {eventKey:stableResearchId("world",eventSignature(titles)),subject:titles[0],researchQuery,eventAnchor,clusterCoherence,category,titles:titles.slice(0,12),urls:urls.slice(0,30),domains:domains.slice(0,30),sourceCountries:countries.slice(0,30),regions:regions.length?regions:(["Global"] as GlobalRegion[]),mentionCount:urls.length,newestAt:newest};
+  }).filter(candidate=>candidate.mentionCount<2||candidate.clusterCoherence>=52).sort((a,b)=>b.domains.length-a.domains.length||b.mentionCount-a.mentionCount).slice(0,120);
 }
 
 async function collectBatched(

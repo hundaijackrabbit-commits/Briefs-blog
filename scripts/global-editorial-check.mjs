@@ -6,7 +6,7 @@ const missing=required.filter(f=>!fs.existsSync(path.join(root,f))||fs.statSync(
 const pkg=JSON.parse(read("package.json"));const discovery=read("src/lib/publication/global-discovery.ts");const scoring=read("src/lib/publication/global-importance.ts");const distinct=read("src/lib/publication/distinctiveness.ts");const editorial=read("src/lib/publication/global-editorial.ts");const scheduler=read("src/lib/publication/scheduler.ts");const angles=read("src/lib/publication/angles.ts");const writer=read("src/lib/publication/writer.ts");const cron=read("src/app/api/cron/publication/route.ts");const schema=read("db/schema.sql");const systems=read("SYSTEMS.md");const vercel=JSON.parse(read("vercel.json"));
 const publicationCron=vercel.crons?.find(c=>c.path==="/api/cron/publication")?.schedule;
 const checks=[
-  [pkg.version==="1.2.1","package version 1.2.1"],
+  [pkg.version.startsWith("1.2."),"package remains on 1.2.x global-editorial line"],
   [discovery.includes("CATEGORY_QUERIES")&&discovery.includes("REGION_TERMS")&&discovery.includes("clusterSeeds"),"global category discovery + geographic normalization + event clustering"],
   [scoring.includes("geographicReach*.20")&&scoring.includes("humanConsequence*.18")&&scoring.includes("longTermConsequence*.12"),"global importance weighted scoring contract"],
   [distinct.includes("current_date-60")&&distinct.includes("materialChange")&&distinct.includes("repeatPenalty"),"60-day daily distinctiveness with material-change override"],

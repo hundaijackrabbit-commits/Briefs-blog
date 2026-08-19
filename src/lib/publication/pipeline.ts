@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import type { ResearchEventAnchor } from "@/lib/research/types";
 import type { EditorialMode,PublicationAudience,StoryAngle } from "@/lib/publication/types";
 import { researchForPublication } from "@/lib/publication/research";
 import { composePublicationArticle } from "@/lib/publication/writer";
@@ -10,13 +11,14 @@ import { createOpportunity,persistAngleCandidates,persistResearchSnapshot,persis
 
 function clamp(n:number){return Math.max(0,Math.min(100,Math.round(n)));}
 
-export async function researchKeyword(keywordId:string,options:{draft?:boolean}={}){
+export async function researchKeyword(keywordId:string,options:{draft?:boolean;selectedSubject?:string;anchorTitles?:string[];eventAnchor?:ResearchEventAnchor;clusterCoherence?:number}={}){
   const sql=db();const row=(await sql`select id,keyword,category,audience_key,editorial_mode,min_sources,require_primary,freshness_hours,min_story_score from publication_keywords where id=${keywordId}::uuid and active=true`)[0] as any;if(!row)throw new Error("Publication keyword not found or inactive");
-  const audience=String(row.audience_key) as PublicationAudience;const researched=await researchForPublication(String(row.keyword),audience,Number(row.freshness_hours));const snapshotId=await persistResearchSnapshot({keywordId,graph:researched.graph,primarySourceCount:researched.primarySourceCount,independentFamilies:researched.independentFamilies});
-  const angles=await generateStoryAngles(researched.graph,audience,String(row.keyword));const best=angles[0];if(!best)throw new Error("Research did not produce a defensible editorial angle");const combinedStory=clamp(researched.opportunity.story*.58+best.score*.42);
+  const audience=String(row.audience_key) as PublicationAudience;const researched=await researchForPublication(String(row.keyword),audience,Number(row.freshness_hours),{selectedSubject:options.selectedSubject,anchorTitles:options.anchorTitles,eventAnchor:options.eventAnchor,clusterCoherence:options.clusterCoherence});const snapshotId=await persistResearchSnapshot({keywordId,graph:researched.graph,primarySourceCount:researched.primarySourceCount,independentFamilies:researched.independentFamilies});
+  const angles=await generateStoryAngles(researched.graph,audience,options.selectedSubject||String(row.keyword));const best=angles[0];if(!best)throw new Error("Research did not produce a defensible editorial angle");const combinedStory=clamp(researched.opportunity.story*.58+best.score*.42);
   const opportunityId=await createOpportunity({keywordId,subject:researched.graph.canonicalSubject,angle:best.title,story:combinedStory,evidence:Math.round((researched.opportunity.evidence+best.evidenceScore)/2),novelty:Math.round((researched.opportunity.novelty+best.noveltyScore)/2),audience:best.audienceScore,freshness:researched.opportunity.freshness,rationale:[...researched.opportunity.rationale,...best.rationale,`selected angle ${best.key}`],snapshotId});
   await persistAngleCandidates({opportunityId,keywordId,snapshotId,angles});
   await sql`update publication_keywords set last_researched_at=now(),next_research_at=now()+(${Number(row.freshness_hours)}||' hours')::interval,updated_at=now() where id=${keywordId}::uuid`;
+  if(researched.graph.alignment&&!researched.graph.alignment.passed){await sql`update publication_opportunities set status='blocked',updated_at=now() where id=${opportunityId}::uuid`;return {opportunityId,status:"blocked",storyScore:combinedStory,alignment:researched.graph.alignment,reason:`Research subject alignment blocked drafting at ${researched.graph.alignment.score}/100`};}
   if(options.draft!==false&&String(row.editorial_mode)!=="manual"&&combinedStory>=Number(row.min_story_score)){const draft=await draftOpportunity(opportunityId);return {opportunityId,angles:angles.map(a=>({title:a.title,score:a.score})),...draft};}
   return {opportunityId,status:"candidate",storyScore:combinedStory,angles:angles.map(a=>({title:a.title,score:a.score}))};
 }

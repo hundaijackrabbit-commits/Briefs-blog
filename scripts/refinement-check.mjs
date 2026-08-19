@@ -9,7 +9,7 @@ const checks=[
  [brief.includes("inferReaderModel")&&brief.includes("buildAnswerPlan")&&brief.includes("composeReaderAnswer")&&brief.includes("evaluateAnswerQuality"),"Reader Model → Answer Plan → grounded composer → answer quality"],
  [pipeline.includes("generateStoryAngles")&&pipeline.includes("buildStoryContract")&&pipeline.includes("persistAngleCandidates"),"multi-angle editorial planning + story contract"],
  [quality.includes("evaluateAudienceFit")&&quality.includes("headlineScore")&&quality.includes("specificityScore"),"semantic audience/headline/specificity publication grading"],
- [writer.includes("briefs-publication-draft-v2")&&writer.includes("story:contract")&&writer.includes("claimIdsMustComeFromInput"),"writer contract is evidence-bound"],
+ [/briefs-publication-draft-v[23]/.test(writer)&&writer.includes("story:contract")&&writer.includes("claimIdsMustComeFromInput"),"writer contract is evidence-bound"],
  [schema.includes("publication_angle_candidates")&&schema.includes("publication_story_contracts")&&schema.includes("brief_answer_evaluations"),"V10.2 persistence schema"],
  [systems.includes("Reader Intelligence Engine")&&systems.includes("Story Angle Intelligence")&&systems.includes("Answer Quality Lab"),"canonical system ledger includes refinement systems"]
 ];
