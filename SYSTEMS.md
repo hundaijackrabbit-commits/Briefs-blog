@@ -353,3 +353,12 @@ V10 closes the ten-version MVP roadmap. Future work is normal post-MVP iteration
 - Canonical Action / Retrieval Separation — operational; taxonomy labels support event scoring but do not replace the lexical terms used to find corroborating evidence
 - Alignment Query Normalization — operational; repair variants use the normalized event subject rather than editorial presentation framing
 - Canonical law — taxonomy is for scoring; retrieval preserves the event language needed to find the same real-world change
+
+## Publication Engine 1.2.2 — Global Top-Stories Discovery Rail
+- Global Top-Stories Discovery Rail — operational; broad Google News top-story editions supplement keyword and regional search feeds
+- Bounded Edition Diversity — operational; five English-language editions (US, UK, Canada, Australia, India) provide broader agenda coverage without unbounded network fan-out
+- Top-Story Signal Isolation — operational; top-story feeds are discovery signals only and do not establish facts
+- Top-Story Failure Isolation — operational; a failed top-story edition cannot zero out keyword RSS or GDELT discovery
+- Top-Story Coverage Telemetry — operational; runtime logs report successful/failed top-story editions alongside existing discovery rails
+- Existing Viability Thresholds Preserved — operational; candidate integrity, evidence breadth and `finalScore >= 55` requirements are unchanged
+- Canonical law — improve the candidate universe before weakening the definition of a globally important flagship

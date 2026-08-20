@@ -4,6 +4,7 @@ import { anchorPreservingQuery,buildEventAnchor,clusterCoherenceScore,titleEvent
 import { normalizeEventSubject } from "@/lib/publication/retrieval-fidelity";
 import { evaluateCandidateIntegrity } from "@/lib/publication/candidate-integrity";
 import { orderDiscoveryCandidates } from "@/lib/publication/candidate-pool";
+import { GLOBAL_TOP_STORY_EDITIONS,googleNewsTopStoriesUrl,type TopStoryEdition } from "@/lib/publication/global-top-stories";
 
 // Discovery sources are signals only. They may propose events, but never establish facts by themselves.
 type GdeltArticle={url?:string;title?:string;seendate?:string;domain?:string;sourcecountry?:string};
@@ -155,6 +156,33 @@ async function queryGoogleNews(category:GlobalCategory,query:string):Promise<Glo
   }finally{clearTimeout(timer);}
 }
 
+async function queryGoogleNewsTop(edition:TopStoryEdition):Promise<GlobalArticleSeed[]>{
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),5500);
+  try{
+    const res=await fetch(googleNewsTopStoriesUrl(edition),{signal:controller.signal,headers:{
+      accept:"application/rss+xml, application/xml, text/xml;q=0.9, */*;q=0.8",
+      "user-agent":process.env.BRIEFS_USER_AGENT||"BriefsBlog/1.0 (+https://briefs.blog)"
+    },cache:"no-store"});
+    if(!res.ok)throw new Error(`HTTP ${res.status} from news.google.com ${edition.label} top stories`);
+    const xml=await res.text();
+    const items=xml.match(/<item\b[\s\S]*?<\/item>/gi)||[];
+    const out:GlobalArticleSeed[]=[];const seen=new Set<string>();
+    for(const item of items.slice(0,50)){
+      const rawTitle=tagValue(item,"title");
+      const title=cleanTitle(rawTitle);
+      const link=tagValue(item,"link");
+      const publishedAt=rssDate(tagValue(item,"pubDate"));
+      const source=sourceInfo(item);
+      const domain=safeDomain(source.url)||safeDomain(link)||"news.google.com";
+      if(!link||title.length<18||seen.has(link))continue;
+      seen.add(link);
+      out.push({url:link,title,domain,sourceCountry:null,publishedAt,category:"World",regionHints:regionHints(title,null)});
+    }
+    return out;
+  }finally{clearTimeout(timer);}
+}
+
 function shouldMerge(seed:GlobalArticleSeed,existing:GlobalArticleSeed){
   const sim=similarity(seed.title,existing.title);
   if(sim>=.58)return true;
@@ -220,14 +248,26 @@ async function collectBatched(
   return {label,seeds:successes.flat(),successes:successes.length,failures};
 }
 
+async function collectTopStories(){
+  const settled=await Promise.allSettled(GLOBAL_TOP_STORY_EDITIONS.map(edition=>queryGoogleNewsTop(edition)));
+  const successes:GlobalArticleSeed[][]=[];
+  const failures:string[]=[];
+  settled.forEach((result,index)=>{
+    if(result.status==="fulfilled")successes.push(result.value);
+    else failures.push(`${GLOBAL_TOP_STORY_EDITIONS[index].label}: ${result.reason instanceof Error?result.reason.message:String(result.reason)}`);
+  });
+  return {label:"google-news-top",seeds:successes.flat(),successes:successes.length,failures};
+}
+
 export async function discoverGlobalEvents():Promise<GlobalEventCandidate[]>{
   // Run independent discovery rails together. A slow or unavailable source cannot zero out the editorial desk.
-  const [gdelt,rss]=await Promise.all([
+  const [gdelt,rss,top]=await Promise.all([
     collectBatched(CATEGORY_QUERIES,GDELT_CONCURRENCY,queryCategory,"gdelt"),
-    collectBatched(RSS_QUERIES,RSS_CONCURRENCY,queryGoogleNews,"google-news-rss")
+    collectBatched(RSS_QUERIES,RSS_CONCURRENCY,queryGoogleNews,"google-news-rss"),
+    collectTopStories()
   ]);
 
-  const seeds=[...gdelt.seeds,...rss.seeds];
+  const seeds=[...gdelt.seeds,...rss.seeds,...top.seeds];
   const unique=new Map<string,GlobalArticleSeed>();
   for(const seed of seeds){
     const key=`${seed.domain}|${cleanTitle(seed.title).toLowerCase()}`;
@@ -238,10 +278,12 @@ export async function discoverGlobalEvents():Promise<GlobalEventCandidate[]>{
   console.info(
     `[global-discovery] gdelt=${gdelt.successes}/${CATEGORY_QUERIES.length} gdeltFailed=${gdelt.failures.length} `+
     `rss=${rss.successes}/${RSS_QUERIES.length} rssFailed=${rss.failures.length} `+
+    `top=${top.successes}/${GLOBAL_TOP_STORY_EDITIONS.length} topFailed=${top.failures.length} `+
     `seeds=${seeds.length} unique=${unique.size} candidates=${candidates.length}`
   );
   if(gdelt.failures.length)console.warn(`[global-discovery] gdelt failures: ${gdelt.failures.slice(0,4).join(" | ")}${gdelt.failures.length>4?` | +${gdelt.failures.length-4} more`:""}`);
   if(rss.failures.length)console.warn(`[global-discovery] rss failures: ${rss.failures.slice(0,4).join(" | ")}${rss.failures.length>4?` | +${rss.failures.length-4} more`:""}`);
+  if(top.failures.length)console.warn(`[global-discovery] top-story failures: ${top.failures.slice(0,4).join(" | ")}${top.failures.length>4?` | +${top.failures.length-4} more`:""}`);
 
   return candidates;
 }
