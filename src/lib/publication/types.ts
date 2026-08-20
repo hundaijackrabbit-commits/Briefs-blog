@@ -109,6 +109,7 @@ export type OriginalityReport = {
   maxLibraryOverlap: number;
   longestMatchingWords: number;
   warnings: string[];
+  blockingReasons:string[];
   diagnostics:{strongestSourceMatch?:OriginalityMatchDiagnostic;strongestLibraryMatch?:OriginalityMatchDiagnostic};
 };
 

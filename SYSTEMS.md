@@ -335,3 +335,13 @@ V10 closes the ten-version MVP roadmap. Future work is normal post-MVP iteration
 - Zero-Viable Diagnostics — operational; failed runs log top ranked candidate metrics for integrity, domain breadth, evidence breadth, importance and final score
 - Existing Viability Thresholds Preserved — `domains >= 2`, `evidenceBreadth >= 42`, `finalScore >= 55`, and discovery-integrity requirements remain unchanged
 - Canonical law — integrity is a gate, not a substitute for global importance or evidence breadth
+
+## Publication Engine 1.2.2 — Originality Warning/Block Separation
+- Originality Warning/Block Separation — operational; moderate source similarity can trigger editorial review without automatically failing publication quality
+- Short-Source N-Gram Normalization — operational; one shared phrase in a short headline/excerpt cannot dominate the overlap ratio
+- Exact-Copy Hard Gate — operational; exact matches of 14+ words remain publication blockers
+- High Source-Overlap Hard Gate — operational; source-overlap risk of 34%+ remains a blocker, with a combined 30% + 12-word-match blocker
+- High Library-Overlap Hard Gate — operational; library-overlap risk of 36%+ remains a blocker, with a combined 32% + 12-word-match blocker
+- Continuous Originality Score — operational; quality score reflects measured overlap and phrase length instead of collapsing every warning to the same low score
+- Originality Blocker Telemetry — operational; blocking reasons are typed and persisted with similarity diagnostics
+- Canonical law — factual overlap expected from evidence-grounded reporting may trigger review, but only imitation-level overlap blocks drafting

@@ -77,7 +77,9 @@ export function evaluatePublicationQuality(args:{draft:ArticleDraft;graph:Resear
   const voice=evaluateVoice(fullText);
   const audience=evaluateAudienceFit(draft);
   const diversity=clamp(args.independentFamilies*24+Math.min(args.primarySources,2)*12);
-  const originalityScore=originality.passed?clamp(100-originality.maxSourceOverlap*220-originality.maxLibraryOverlap*120):clamp(55-originality.longestMatchingWords);
+  const overlapPenalty=originality.maxSourceOverlap*220+originality.maxLibraryOverlap*120;
+  const phrasePenalty=Math.max(0,originality.longestMatchingWords-5)*4;
+  const originalityScore=clamp(100-Math.max(overlapPenalty,phrasePenalty));
   const freshnessScore=graph.plan.freshness==="historical"?95:clamp(100-Math.max(0,(Date.now()-Date.parse(graph.knowledgeCutoff))/3_600_000)*2);
   const headlineScore=titleEvidenceScore(draft,graph);
   const specificity=specificityScore(fullText);
@@ -92,7 +94,7 @@ export function evaluatePublicationQuality(args:{draft:ArticleDraft;graph:Resear
   if(graph.sources.length<args.minSources)blockers.push(`Needs at least ${args.minSources} eligible sources.`);
   if(args.requirePrimary&&args.primarySources<1)blockers.push("A primary source is required for this keyword.");
   if(args.independentFamilies<2)blockers.push("Needs evidence from at least two independent source families.");
-  if(!originality.passed)blockers.push("Originality gate failed.");
+  if(!originality.passed)blockers.push(`Originality gate failed: ${originality.blockingReasons.join(" ")}`);
   if(unsupportedClaimIds.length)blockers.push(`${unsupportedClaimIds.length} draft claim reference(s) are not present in the research graph.`);
   if(factualUngrounded.length)blockers.push(`${factualUngrounded.length} factual section(s) lack claim-level grounding.`);
   if(graph.alignment&&!graph.alignment.passed)blockers.push(`Research subject alignment ${graph.alignment.score}/100 failed: ${graph.alignment.reasons.join(" ")}`);
