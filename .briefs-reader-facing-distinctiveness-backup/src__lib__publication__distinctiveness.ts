@@ -2,7 +2,6 @@ import { db } from "@/lib/db";
 import type { GlobalEventCandidate,GlobalScoredCandidate } from "@/lib/publication/global-types";
 import { scoreGlobalImportance } from "@/lib/publication/global-importance";
 import { rankingInput } from "@/lib/publication/candidate-pool";
-import { categoryFatiguePenalty } from "@/lib/publication/distinctiveness-history";
 
 function clamp(n:number){return Math.max(0,Math.min(100,Math.round(n)));}
 const STOP=new Set("the a an and or but for with from into over after before amid as at by to of in on is are was were be been being it its this that new latest update says world global today why what how when where matters explained".split(" "));
@@ -11,15 +10,15 @@ function similarity(a:string,b:string){const A=tokens(a),B=tokens(b);if(!A.size|
 const STATE_CHANGE=["ceasefire","invasion","resign","resigns","resigned","elected","wins election","verdict","convicted","acquitted","approved","passes","enacted","signed","launches","launched","collapse","collapsed","default","attack","strikes","earthquake","erupts","deal reached","agreement signed","bankruptcy","assassination"];
 
 type RecentFlagship={subject:string;category:string;editorial_day:string;mention_count:number;source_family_count:number;regions:string[]};
-async function recentFlagships():Promise<RecentFlagship[]>{if(!process.env.DATABASE_URL)return [];try{const sql=db();const rows=await sql`select subject,category,editorial_day,mention_count,source_family_count,regions from publication_daily_flagships where editorial_day>=current_date-60 and editorial_day<current_date and article_id is not null and status in ('drafted','published') order by editorial_day desc limit 60`;return (rows as unknown as Array<{subject:string;category:string;editorial_day:string|Date;mention_count:number;source_family_count:number;regions:unknown}>).map(row=>({subject:String(row.subject),category:String(row.category),editorial_day:new Date(row.editorial_day).toISOString().slice(0,10),mention_count:Number(row.mention_count||0),source_family_count:Number(row.source_family_count||0),regions:Array.isArray(row.regions)?row.regions.map(String):[]}));}catch{return [];}}
+async function recentFlagships():Promise<RecentFlagship[]>{if(!process.env.DATABASE_URL)return [];try{const sql=db();const rows=await sql`select subject,category,editorial_day,mention_count,source_family_count,regions from publication_daily_flagships where editorial_day>=current_date-60 and editorial_day<current_date order by editorial_day desc limit 60`;return (rows as unknown as Array<{subject:string;category:string;editorial_day:string|Date;mention_count:number;source_family_count:number;regions:unknown}>).map(row=>({subject:String(row.subject),category:String(row.category),editorial_day:new Date(row.editorial_day).toISOString().slice(0,10),mention_count:Number(row.mention_count||0),source_family_count:Number(row.source_family_count||0),regions:Array.isArray(row.regions)?row.regions.map(String):[]}));}catch{return [];}}
 
 function materialChange(candidate:GlobalEventCandidate,prior:RecentFlagship|undefined,sim:number){if(sim<0.48)return false;const text=`${candidate.subject} ${candidate.titles.join(" ")}`.toLowerCase();if(STATE_CHANGE.some(term=>text.includes(term)))return true;if(!prior)return false;const regionDelta=new Set(candidate.regions).size-new Set(prior.regions).size;return candidate.mentionCount>=Math.max(4,prior.mention_count*1.5)||candidate.domains.length>=prior.source_family_count+3||regionDelta>=2;}
 
 function scoreWithHistory(candidate:GlobalEventCandidate,recent:RecentFlagship[]):GlobalScoredCandidate{
   const importance=scoreGlobalImportance(candidate);let maxSim=0;let closest:RecentFlagship|undefined;for(const prior of recent){const sim=similarity(candidate.subject,prior.subject);if(sim>maxSim){maxSim=sim;closest=prior;}}
-  const categoryFatigue=categoryFatiguePenalty(recent.slice(0,5).map(row=>row.category),candidate.category);
-  const override=materialChange(candidate,closest,maxSim);let repeatPenalty=0;if(maxSim>=.72)repeatPenalty+=override?8:34;else if(maxSim>=.55)repeatPenalty+=override?5:24;else if(maxSim>=.40)repeatPenalty+=10;repeatPenalty+=categoryFatigue.penalty;
-  const distinctivenessScore=clamp(100-maxSim*92-categoryFatigue.penalty+(override?16:0));
+  const sameCategoryYesterday=recent[0]?.category===candidate.category;const recentCategoryCount=recent.slice(0,5).filter(row=>row.category===candidate.category).length;
+  const override=materialChange(candidate,closest,maxSim);let repeatPenalty=0;if(maxSim>=.72)repeatPenalty+=override?8:34;else if(maxSim>=.55)repeatPenalty+=override?5:24;else if(maxSim>=.40)repeatPenalty+=10;if(sameCategoryYesterday)repeatPenalty+=5;if(recentCategoryCount>=3)repeatPenalty+=6;
+  const distinctivenessScore=clamp(100-maxSim*92-(sameCategoryYesterday?8:0)-Math.max(0,recentCategoryCount-2)*5+(override?16:0));
   const integrityScore=Number(candidate.candidateIntegrityScore||0);
   const integrityAdjustment=(integrityScore-70)*.12;
   const finalScore=clamp(importance.importanceScore*.74+distinctivenessScore*.18+importance.evidenceBreadth*.08-repeatPenalty*.55+integrityAdjustment);
