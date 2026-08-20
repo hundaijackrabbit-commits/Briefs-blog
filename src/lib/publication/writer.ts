@@ -2,6 +2,7 @@ import type { ResearchFinding,ResearchGraph,ResearchSource } from "@/lib/researc
 import type { ArticleDraft,ArticleSectionDraft,PublicationAudience,StoryContract } from "@/lib/publication/types";
 import { readerContract } from "@/lib/publication/audience";
 import { detectWritingDomain,domainDeckClause,domainMeaning,domainWatch,synthesizeReportingFinding } from "@/lib/publication/writer-synthesis";
+import { originalitySafeHeadline } from "@/lib/publication/headline-originality";
 
 function clean(value:string){return value.replace(/\s+/g," ").trim();}
 function sentence(value:string){const c=clean(value);return c?c.replace(/[.!?]+$/g,"")+".":"";}
@@ -21,9 +22,11 @@ function selectedFindings(graph:ResearchGraph,ids:string[],fallback=6){const byI
 function paragraph(findings:ResearchFinding[],graph:ResearchGraph,domain:ReturnType<typeof detectWritingDomain>,max=4){return findings.slice(0,max).map((f,i)=>claimSentence(f,graph,i,domain)).join(" ");}
 function headlineFor(graph:ResearchGraph,contract:StoryContract){
   const subject=graph.canonicalSubject.replace(/\b\w/g,m=>m.toUpperCase());const facts=graph.findings.map(f=>clean(f.valueText||f.statement||""));const numeric=facts.find(x=>/\b\d[\d,.]*\b/.test(x));
-  if(numeric){const n=(numeric.match(/\b\d[\d,.]*\b/)||[])[0];if(/infection/i.test(numeric))return `${subject}: Reported Infections Pass ${n}`;if(/dead|death/i.test(numeric))return `${subject}: Death Toll Passes ${n}`;}
-  const strongest=facts.find(x=>/deadliest|emergency|sixth province|record/i.test(x));if(strongest&&stripOutletSuffix(strongest).split(/\s+/).length<=16)return stripOutletSuffix(strongest);
-  return contract.angle&&contract.angle.length<=110?contract.angle:`What changed in ${graph.canonicalSubject}`;
+  let preferred="";
+  if(numeric){const n=(numeric.match(/\b\d[\d,.]*\b/)||[])[0];if(/infection/i.test(numeric))preferred=`${subject}: Reported Infections Pass ${n}`;else if(/dead|death/i.test(numeric))preferred=`${subject}: Death Toll Passes ${n}`;}
+  if(!preferred){const strongest=facts.find(x=>/deadliest|emergency|sixth province|record/i.test(x));if(strongest&&stripOutletSuffix(strongest).split(/\s+/).length<=16)preferred=stripOutletSuffix(strongest);}
+  if(!preferred)preferred=contract.angle&&contract.angle.length<=110?contract.angle:`What changed in ${graph.canonicalSubject}`;
+  return originalitySafeHeadline(preferred,graph.canonicalSubject,graph.sources.map(s=>s.title));
 }
 function deckFor(graph:ResearchGraph,domain:ReturnType<typeof detectWritingDomain>,allEvidence:string){const families=new Set(graph.sources.map(s=>s.independenceFamily||s.provider)).size;return `Briefs found ${graph.sources.length} eligible sources across ${families} independent source families. ${domainDeckClause(domain,graph.canonicalSubject,allEvidence)}`.slice(0,280);}
 

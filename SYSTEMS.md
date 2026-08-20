@@ -371,3 +371,11 @@ V10 closes the ten-version MVP roadmap. Future work is normal post-MVP iteration
 - Topic Similarity Penalties Preserved — operational; strong 60-day event/topic similarity penalties and Material Change Override remain intact
 - Existing Global Viability Thresholds Preserved — operational; candidate integrity, evidence breadth and `finalScore >= 55` gates are unchanged
 - Canonical law — distinctiveness protects readers from repetitive stories, not from important new events that happen to share a broad section label
+
+## Publication Engine 1.2.2 — Headline Originality Preflight
+- Headline Originality Preflight — operational; deterministic article headlines are compared against research-source headlines before article originality evaluation
+- Source-Headline Recomposition — operational; 11+ word exact headline runs are reframed before they can trip the article-level exact-copy blocker
+- Event-Identity Preservation — operational; headline repair preserves event-defining subject language while changing source-headline structure
+- Bounded Headline Fallback — operational; long source-like subjects have a deterministic bounded fallback when no natural clause reframe is available
+- Article Exact-Copy Gate Preserved — operational; the 14-word hard blocker for article/source overlap remains unchanged
+- Canonical law — repair the writer when a headline is source-shaped; never weaken the article originality gate to make the draft pass
