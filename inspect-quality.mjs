@@ -1,4 +1,4 @@
-import postgres from "postgres";
+﻿import postgres from "postgres";
 
 const sql = postgres(process.env.DATABASE_URL, {
   max: 1,
@@ -6,7 +6,7 @@ const sql = postgres(process.env.DATABASE_URL, {
 });
 
 try {
-  const opportunityId = "5996e37d-89d2-4877-9086-89a13f7433ef";
+  const opportunityId = "9b95f18c-c192-438e-94b6-6376e915226a";
 
   const rows = await sql`
     select
@@ -34,3 +34,4 @@ try {
 } finally {
   await sql.end({ timeout: 5 });
 }
+

@@ -1,6 +1,7 @@
 import { fetchJson, stableResearchId } from "@/lib/research/http";
 import type { GlobalArticleSeed,GlobalCategory,GlobalEventCandidate,GlobalRegion } from "@/lib/publication/global-types";
 import { anchorPreservingQuery,buildEventAnchor,clusterCoherenceScore,titleEventAlignment } from "@/lib/publication/event-identity";
+import { normalizeEventSubject } from "@/lib/publication/retrieval-fidelity";
 import { evaluateCandidateIntegrity } from "@/lib/publication/candidate-integrity";
 import { orderDiscoveryCandidates } from "@/lib/publication/candidate-pool";
 
@@ -180,7 +181,9 @@ function clusterSeeds(seeds:GlobalArticleSeed[]):GlobalEventCandidate[]{
   const candidates=clusters.map(cluster=>{
     const allTitles=[...new Set(cluster.seeds.map(s=>s.title))];
     const newest=cluster.seeds.map(s=>s.publishedAt).filter((v):v is string=>Boolean(v)).sort().at(-1)||null;
-    const eventAnchor=buildEventAnchor(allTitles[0]||"",allTitles,newest);
+    const rawSubject=allTitles[0]||"";
+    const subject=normalizeEventSubject(rawSubject);
+    const eventAnchor=buildEventAnchor(subject,[subject,...allTitles],newest);
     const clusterCoherence=clusterCoherenceScore(eventAnchor,allTitles);
     const coherentSeeds=cluster.seeds.filter((seed,index)=>index===0||titleEventAlignment(eventAnchor,seed.title)>=45);
     const titles=[...new Set(coherentSeeds.map(s=>s.title))];
@@ -193,7 +196,7 @@ function clusterSeeds(seeds:GlobalArticleSeed[]):GlobalEventCandidate[]{
     const category=[...categoryCounts.entries()].sort((a,b)=>b[1]-a[1])[0]?.[0]||cluster.category;
     const researchQuery=anchorPreservingQuery(bestResearchPhrase(titles),eventAnchor);
     const integrity=evaluateCandidateIntegrity({eventAnchor,titles,clusterCoherence});
-    return {eventKey:stableResearchId("world",eventSignature(titles)),subject:titles[0],researchQuery,eventAnchor,clusterCoherence,...integrity,category,titles:titles.slice(0,12),urls:urls.slice(0,30),domains:domains.slice(0,30),sourceCountries:countries.slice(0,30),regions:regions.length?regions:(["Global"] as GlobalRegion[]),mentionCount:urls.length,newestAt:newest};
+    return {eventKey:stableResearchId("world",eventSignature(titles)),subject,researchQuery,eventAnchor,clusterCoherence,...integrity,category,titles:titles.slice(0,12),urls:urls.slice(0,30),domains:domains.slice(0,30),sourceCountries:countries.slice(0,30),regions:regions.length?regions:(["Global"] as GlobalRegion[]),mentionCount:urls.length,newestAt:newest};
   });
   return orderDiscoveryCandidates(candidates.filter(candidate=>candidate.candidateIntegrityPassed)).slice(0,120);
 }

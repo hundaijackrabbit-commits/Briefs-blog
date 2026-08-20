@@ -1,4 +1,5 @@
 import type { ResearchEventAnchor } from "@/lib/research/types";
+import { lexicalRetrievalQuery,lexicalRetrievalTerms,normalizeEventSubject } from "@/lib/publication/retrieval-fidelity";
 
 const STOP=new Set("the a an and or but for with from into over after before amid as at by to of in on is are was were be been being it its this that these those new latest update says say said report reports world global today yesterday tomorrow live more most less than about could would should will may might has have had not no yes their his her our your who what why how when where which one two three first last major key top inside easy miss recent reporting".split(" "));
 const GENERIC=new Set("news breaking update updates report reports says said latest world global live today analysis exclusive video watch story detail connection development developments".split(" "));
@@ -122,17 +123,12 @@ export function eventhoodScore(anchor:ResearchEventAnchor,titles:string[]){
 }
 
 export function anchorPreservingQuery(original:string,anchor:ResearchEventAnchor){
-  const subjectOrder=eventTokens(anchor.subject);
-  const terms=unique([...subjectOrder.filter(t=>anchor.topicTerms.includes(t)).slice(0,4),...anchor.actionTerms.slice(0,2)]);
-  const geography=anchor.geographyTerms.slice(0,2);
-  const originalTerms=eventTokens(original);
-  for(const term of originalTerms)if(anchor.distinctiveTerms.includes(term)&&!terms.includes(term))terms.push(term);
-  const query=unique([...terms,...geography]).join(" ").trim();
-  return query||anchor.subject;
+  return lexicalRetrievalQuery(anchor.subject,original);
 }
 
 export function alignmentQueryVariants(anchor:ResearchEventAnchor,original:string){
   const primary=anchorPreservingQuery(original,anchor);
-  const compact=unique([...anchor.topicTerms.slice(0,4),...anchor.actionTerms.slice(0,2),...anchor.geographyTerms.slice(0,1)]).join(" ");
-  return unique([primary,anchor.subject,compact]).filter(query=>query.trim().length>=4).slice(0,3);
+  const normalizedSubject=normalizeEventSubject(anchor.subject);
+  const compact=lexicalRetrievalTerms(normalizedSubject,5).join(" ");
+  return unique([primary,normalizedSubject,compact]).filter(query=>query.trim().length>=4).slice(0,3);
 }

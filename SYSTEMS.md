@@ -345,3 +345,11 @@ V10 closes the ten-version MVP roadmap. Future work is normal post-MVP iteration
 - Continuous Originality Score — operational; quality score reflects measured overlap and phrase length instead of collapsing every warning to the same low score
 - Originality Blocker Telemetry — operational; blocking reasons are typed and persisted with similarity diagnostics
 - Canonical law — factual overlap expected from evidence-grounded reporting may trigger review, but only imitation-level overlap blocks drafting
+
+## Publication Engine 1.2.2 — Retrieval Fidelity & Presentation Normalization
+- Event Subject Presentation Normalization — operational; source-format prefixes such as `Map:`, `Analysis:`, `Explainer:`, `Live Updates:` and similar presentation labels are removed before event identity is persisted
+- Retrieval Lexeme Preservation — operational; source-language event words are preserved for search even when event scoring maps them to a canonical action class
+- Event Measurement Preservation — operational; decimal measurements such as earthquake magnitude remain available to retrieval queries
+- Canonical Action / Retrieval Separation — operational; taxonomy labels support event scoring but do not replace the lexical terms used to find corroborating evidence
+- Alignment Query Normalization — operational; repair variants use the normalized event subject rather than editorial presentation framing
+- Canonical law — taxonomy is for scoring; retrieval preserves the event language needed to find the same real-world change
