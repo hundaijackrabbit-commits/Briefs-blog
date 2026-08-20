@@ -388,3 +388,13 @@ V10 closes the ten-version MVP roadmap. Future work is normal post-MVP iteration
 - Source Minimums Preserved — operational; at least three aligned sources and two independent families are still required
 - Query Budget Preserved — operational; the existing initial query plus at most two bounded repair variants remains unchanged
 - Canonical law — bounded repair queries may contribute complementary evidence for the same anchored event; no single query must rediscover every corroborating source if the union remains independently aligned
+
+## Publication Engine 1.2.2 — Grounded Narrative Depth Repair
+- Grounded Narrative Depth Repair — operational; deterministic fallback drafts can expand only from unused research findings when reader-facing depth is too thin
+- Evidence-Section Depth Margin — operational; deterministic evidence sections target 24 grounded words while the publication gate remains 12
+- Reader-Narrative Depth Margin — operational; deterministic drafts target 180 non-method words while the publication gate remains 160
+- No Padding Without Evidence — operational; already-used claim IDs are not repeated merely to satisfy length requirements
+- Claim-Level Grounding Preserved — operational; every added factual sentence carries the research finding ID that supports it
+- Originality Gate Preserved — operational; all enriched draft text still passes through the existing source/library originality checks
+- Reader-Ready Gate Preserved — operational; 160-word non-method minimum and three substantive sections remain unchanged
+- Canonical law — when a fallback draft is too thin, add unused grounded evidence; never lower quality gates or pad with unsupported prose
