@@ -379,3 +379,12 @@ V10 closes the ten-version MVP roadmap. Future work is normal post-MVP iteration
 - Bounded Headline Fallback — operational; long source-like subjects have a deterministic bounded fallback when no natural clause reframe is available
 - Article Exact-Copy Gate Preserved — operational; the 14-word hard blocker for article/source overlap remains unchanged
 - Canonical law — repair the writer when a headline is source-shaped; never weaken the article originality gate to make the draft pass
+
+## Publication Engine 1.2.2 — Bounded Alignment Repair Evidence Union
+- Bounded Alignment Repair Evidence Union — operational; evidence recovered by the initial query and at most two alignment-repair queries can be combined before final subject-alignment evaluation
+- Repair Attempt Source Deduplication — operational; repeated source IDs across repair queries are counted once
+- Repair Attempt Finding Deduplication — operational; repeated findings are merged while preserving all supporting source IDs
+- Alignment-First Attempt Selection — operational; a publication-passing evidence union outranks a higher numeric score that still fails the minimum aligned-source gate
+- Source Minimums Preserved — operational; at least three aligned sources and two independent families are still required
+- Query Budget Preserved — operational; the existing initial query plus at most two bounded repair variants remains unchanged
+- Canonical law — bounded repair queries may contribute complementary evidence for the same anchored event; no single query must rediscover every corroborating source if the union remains independently aligned

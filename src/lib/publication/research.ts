@@ -6,6 +6,7 @@ import type { PublicationResearch } from "@/lib/publication/types";
 import { primarySourceCount, scoreOpportunity, sourceFamilies } from "@/lib/publication/scoring";
 import { alignmentQueryVariants,anchorPreservingQuery,buildEventAnchor } from "@/lib/publication/event-identity";
 import { applyResearchAlignment,evaluateResearchAlignment } from "@/lib/publication/subject-alignment";
+import { betterAlignment,mergeResearchGraphs } from "@/lib/publication/alignment-repair-union";
 
 function normalizedWords(text: string) {
   return new Set(text.toLowerCase().replace(/[^a-z0-9\s]/g, " ").split(/\s+/).filter(x => x.length > 2));
@@ -52,7 +53,18 @@ async function alignedPublicationGraph(keyword:string,audience:string,freshnessH
       const alignment=evaluateResearchAlignment({graph,anchor,selectedSubject,queries:attempted,clusterCoherence:options.clusterCoherence,repaired:true});
       return {graph,alignment};
     }));
-    for(const repair of repairs)if(repair.alignment.score>bestAlignment.score){bestGraph=repair.graph;bestAlignment=repair.alignment;}
+
+    let best={graph:bestGraph,alignment:bestAlignment};
+    for(const repair of repairs)best=betterAlignment(best,repair);
+
+    if(repairs.length){
+      const mergedGraph=mergeResearchGraphs([initialGraph,...repairs.map(repair=>repair.graph)],selectedSubject);
+      const mergedAlignment=evaluateResearchAlignment({graph:mergedGraph,anchor,selectedSubject,queries:attempted,clusterCoherence:options.clusterCoherence,repaired:true});
+      best=betterAlignment(best,{graph:mergedGraph,alignment:mergedAlignment});
+    }
+
+    bestGraph=best.graph;
+    bestAlignment=best.alignment;
   }
 
   bestAlignment={...bestAlignment,queries:[...new Set(attempted)],repaired:bestGraph!==initialGraph};
