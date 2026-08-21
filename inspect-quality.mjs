@@ -6,7 +6,7 @@ const sql = postgres(process.env.DATABASE_URL, {
 });
 
 try {
-  const opportunityId = "01f66d96-549f-44df-b966-74b6c6df4a7f";
+  const opportunityId = "eff8e099-2303-4937-8102-54ea4b577a36";
 
   const rows = await sql`
     select
@@ -34,6 +34,8 @@ try {
 } finally {
   await sql.end({ timeout: 5 });
 }
+
+
 
 
 

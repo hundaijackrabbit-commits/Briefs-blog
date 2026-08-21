@@ -398,3 +398,12 @@ V10 closes the ten-version MVP roadmap. Future work is normal post-MVP iteration
 - Originality Gate Preserved — operational; all enriched draft text still passes through the existing source/library originality checks
 - Reader-Ready Gate Preserved — operational; 160-word non-method minimum and three substantive sections remain unchanged
 - Canonical law — when a fallback draft is too thin, add unused grounded evidence; never lower quality gates or pad with unsupported prose
+
+## Publication Engine 1.2.2 — Reader-Prose Originality Preflight
+- Reader-Prose Originality Preflight — operational; source-shaped canonical subjects are reframed before deterministic reader-facing prose interpolation
+- Source-Safe Subject Label — operational; prose synthesis preserves event identity while preventing long contiguous source-title reuse
+- Headline Originality Preflight — preserved; headline repair remains independent and active
+- Article Exact-Copy Hard Gate — preserved; 14-word exact-copy blocking threshold is unchanged
+- Evidence Grounding — preserved; factual sentences remain generated from aligned findings and retain their claim IDs
+- Flagship Result Association Integrity — operational; when fallback attempts all fail, the response reports the opportunity belonging to the same top editorial candidate named in the response
+- Canonical law — source-shaped event labels may guide research, but reader-facing prose must recompose them before publication; never weaken originality gates to compensate for writer reuse

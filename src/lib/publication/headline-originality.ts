@@ -55,6 +55,25 @@ function reframeSubject(subject:string){
   return clean;
 }
 
+/**
+ * Reader-facing prose must not blindly interpolate a canonical subject when that
+ * subject is itself shaped like a source headline. This helper preserves the
+ * event but breaks long contiguous source-title runs before prose synthesis.
+ */
+export function originalitySafeSubject(candidate:string,sourceTitles:string[]){
+  const clean=String(candidate||"").replace(/\s+/g," ").trim();
+  const sources=sourceTitles.filter(Boolean);
+  if(maxSourceRun(clean,sources)<HEADLINE_REPAIR_WORDS)return clean;
+
+  const reframed=reframeSubject(clean);
+  if(maxSourceRun(reframed,sources)<HEADLINE_REPAIR_WORDS)return reframed;
+
+  const words=clean.split(/\s+/).filter(Boolean);
+  if(words.length<=8)return clean;
+  const compact=`${words.slice(0,4).join(" ")} — ${words.slice(-4).join(" ")}`;
+  return compact;
+}
+
 export function originalitySafeHeadline(candidate:string,canonicalSubject:string,sourceTitles:string[]){
   const clean=String(candidate||"").replace(/\s+/g," ").trim();
   const sources=sourceTitles.filter(Boolean);

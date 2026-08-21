@@ -181,6 +181,7 @@ export async function runGlobalEditorialSelection(options:{force?:boolean;draft?
 
     // Try the highest-ranked publishable stories in order. Importance picks the order; evidence gates decide what can responsibly be written.
     const attempts=shortlist.slice(0,Math.min(3,shortlist.length));
+    let firstFailure:DailyFlagshipResult|undefined;
     let lastFailure:DailyFlagshipResult|undefined;
     for(let i=0;i<attempts.length;i++){
       if(i>0&&Date.now()-selectionStarted>32_000)break;
@@ -192,6 +193,7 @@ export async function runGlobalEditorialSelection(options:{force?:boolean;draft?
         await sql`update publication_global_runs set status='selected',selected_candidate_id=${candidateId}::uuid,completed_at=now() where id=${runId}::uuid`;
         return drafted;
       }
+      if(i===0)firstFailure=drafted;
       lastFailure=drafted;
     }
 
@@ -200,7 +202,7 @@ export async function runGlobalEditorialSelection(options:{force?:boolean;draft?
     await sql`update publication_global_candidates set status='research-blocked',selected=true,updated_at=now() where id=${firstId}::uuid`;
     await sql`update publication_daily_flagships set status='research-required',updated_at=now() where editorial_day=${day}::date`;
     await sql`update publication_global_runs set status='selected',selected_candidate_id=${firstId}::uuid,completed_at=now() where id=${runId}::uuid`;
-    return {...(lastFailure||{status:"research-required",editorialDay:day}),candidateId:firstId,subject:first.subject,category:first.category,finalScore:first.finalScore,reason:lastFailure?.reason||"No shortlisted candidate passed the deep-research/article gates"};
+    return {...(firstFailure||lastFailure||{status:"research-required",editorialDay:day}),candidateId:firstId,subject:first.subject,category:first.category,finalScore:first.finalScore,reason:firstFailure?.reason||lastFailure?.reason||"No shortlisted candidate passed the deep-research/article gates"};
     }catch(error){
       if(runId)await sql`update publication_global_runs set status='failed',error_summary=${error instanceof Error?error.message:String(error)},completed_at=now() where id=${runId}::uuid`;
       throw error;

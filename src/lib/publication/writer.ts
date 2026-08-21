@@ -2,7 +2,7 @@ import type { ResearchFinding,ResearchGraph,ResearchSource } from "@/lib/researc
 import type { ArticleDraft,ArticleSectionDraft,PublicationAudience,StoryContract } from "@/lib/publication/types";
 import { readerContract } from "@/lib/publication/audience";
 import { detectWritingDomain,domainDeckClause,domainMeaning,domainWatch,synthesizeReportingFinding } from "@/lib/publication/writer-synthesis";
-import { originalitySafeHeadline } from "@/lib/publication/headline-originality";
+import { originalitySafeHeadline,originalitySafeSubject } from "@/lib/publication/headline-originality";
 import { augmentGroundedDepth } from "@/lib/publication/grounded-depth";
 
 function clean(value:string){return value.replace(/\s+/g," ").trim();}
@@ -12,10 +12,11 @@ function sourceMap(graph:ResearchGraph){return new Map(graph.sources.map(s=>[s.i
 function findingSource(f:ResearchFinding,graph:ResearchGraph):ResearchSource|undefined{const byId=sourceMap(graph);return f.sourceIds.map(id=>byId.get(id)).find((x):x is ResearchSource=>Boolean(x));}
 function stripOutletSuffix(value:string){return clean(value).replace(/\s+[|–—-]\s+[^|–—-]{2,60}$/,"").replace(/\s*:\s*(WHO|CDC|UN|AP|Reuters)$/i,"").trim();}
 function evidenceText(graph:ResearchGraph){return [graph.canonicalSubject,...graph.findings.map(f=>`${f.predicate} ${f.valueText} ${f.statement}`),...graph.sources.map(s=>`${s.title} ${s.excerpt||""}`)].join(" ");}
+function proseSubject(graph:ResearchGraph){return originalitySafeSubject(graph.canonicalSubject,graph.sources.map(s=>s.title));}
 
 function claimSentence(f:ResearchFinding,graph:ResearchGraph,index:number,domain:ReturnType<typeof detectWritingDomain>){
   const p=clean(f.predicate.replace(/[_-]+/g," "));const v=clean(f.valueText||f.statement||"");const source=findingSource(f,graph);
-  if(/^(recent reporting|external context)$/i.test(p))return sentence(synthesizeReportingFinding(v,graph.canonicalSubject,source?.name,domain,index));
+  if(/^(recent reporting|external context)$/i.test(p))return sentence(synthesizeReportingFinding(v,proseSubject(graph),source?.name,domain,index));
   if(v&&p){if(index%3===0)return sentence(`For ${p.toLowerCase()}, the evidence records ${v}`);if(index%3===1)return sentence(`The verified value attached to ${p.toLowerCase()} is ${v}`);return sentence(`${p.charAt(0).toUpperCase()+p.slice(1)} is represented in the research graph as ${v}`);}
   return sentence(v);
 }
@@ -29,19 +30,19 @@ function headlineFor(graph:ResearchGraph,contract:StoryContract){
   if(!preferred)preferred=contract.angle&&contract.angle.length<=110?contract.angle:`What changed in ${graph.canonicalSubject}`;
   return originalitySafeHeadline(preferred,graph.canonicalSubject,graph.sources.map(s=>s.title));
 }
-function deckFor(graph:ResearchGraph,domain:ReturnType<typeof detectWritingDomain>,allEvidence:string){const families=new Set(graph.sources.map(s=>s.independenceFamily||s.provider)).size;return `Briefs found ${graph.sources.length} eligible sources across ${families} independent source families. ${domainDeckClause(domain,graph.canonicalSubject,allEvidence)}`.slice(0,280);}
+function deckFor(graph:ResearchGraph,domain:ReturnType<typeof detectWritingDomain>,allEvidence:string){const families=new Set(graph.sources.map(s=>s.independenceFamily||s.provider)).size;return `Briefs found ${graph.sources.length} eligible sources across ${families} independent source families. ${domainDeckClause(domain,proseSubject(graph),allEvidence)}`.slice(0,280);}
 
 function deterministicDraft(graph:ResearchGraph,audience:PublicationAudience,category:string,contract:StoryContract):ArticleDraft{
-  const allEvidence=evidenceText(graph);const domain=detectWritingDomain(category,graph.canonicalSubject,allEvidence);const strongest=selectedFindings(graph,contract.strongestClaimIds);const counter=selectedFindings(graph,contract.counterClaimIds,0);
+  const allEvidence=evidenceText(graph);const domain=detectWritingDomain(category,graph.canonicalSubject,allEvidence);const proseSubjectValue=proseSubject(graph);const strongest=selectedFindings(graph,contract.strongestClaimIds);const counter=selectedFindings(graph,contract.counterClaimIds,0);
   const openingCount=strongest.length>=3?2:Math.min(2,strongest.length);
   const openingFindings=strongest.slice(0,openingCount);const usedOpening=new Set(openingFindings.map(f=>f.id));const remainingStrongest=strongest.slice(openingCount);
   const evidenceFindings=(remainingStrongest.length?remainingStrongest:graph.findings.filter(f=>!usedOpening.has(f.id))).slice(0,4);
 
-  const opening=paragraph(openingFindings,graph,domain,2)||sentence(graph.description)||`The available evidence on ${graph.canonicalSubject} is still too thin for a confident briefing.`;
+  const opening=paragraph(openingFindings,graph,domain,2)||sentence(graph.description)||`The available evidence on ${proseSubjectValue} is still too thin for a confident briefing.`;
   const evidence=paragraph(evidenceFindings,graph,domain,4)||`The remaining evidence does not add a distinct second factual section without repeating the same claims.`;
-  const meaning=domainMeaning(domain,graph.canonicalSubject);
+  const meaning=domainMeaning(domain,proseSubjectValue);
   const uncertainty=graph.missingEvidence.length?`The main unresolved issue is ${graph.missingEvidence.slice(0,2).join(" ")}`:counter.length?`Some evidence complicates the simplest reading. ${paragraph(counter,graph,domain,2)}`:`The current evidence is strong on the reported event, but weaker on downstream consequences that have not yet been directly observed.`;
-  const watch=domainWatch(domain,graph.canonicalSubject,allEvidence);
+  const watch=domainWatch(domain,proseSubjectValue,allEvidence);
   const method=`Briefs built this briefing from ${graph.findings.length} structured findings across ${graph.sources.length} eligible sources and ${new Set(graph.sources.map(s=>s.independenceFamily||s.provider)).size} independent source families.`;
 
   const depth=augmentGroundedDepth({
