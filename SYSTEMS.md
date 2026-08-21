@@ -428,3 +428,15 @@ V10 closes the ten-version MVP roadmap. Future work is normal post-MVP iteration
 - Normal Attribution Preserved — operational; ordinary source attribution such as "AP reports..." is allowed when it communicates an actual event fact
 - Quality Thresholds Preserved — operational; the 160-word reader-ready minimum, originality hard gates, evidence gates, and unsupported-fact rules are unchanged
 - Canonical law — a technically grounded draft is not publishable if it reads like research plumbing, extracted keywords, or length padding instead of journalism
+
+## Publication Engine 1.2.2 — Event-First Deterministic Writer Repair
+- Event-First Deterministic Writer Repair — operational; generic reporting findings must first attempt an event statement derived from grounded finding text before falling back to source-process synthesis
+- Earthquake Event Recomposition — operational; magnitude/location/immediate-damage language can be deterministically recomposed into reader-facing event prose while retaining the originating claim ID
+- Reader-Facing Deck Composition — operational; decks are composed from event prose rather than source counts, source-family counts, or evidence-coherence process language
+- Event-First Headline Preflight — operational; supported earthquake event labels are rewritten into grammatical reader headlines before originality preflight
+- Event-Specific Meaning/Watch — operational; deterministic analysis and watch sections may explain event-relevant uncertainty and observable next evidence without inventing event facts
+- Interpretive Padding Limit — operational; event-first deterministic drafts do not receive multiple generic stock bridge sentences merely to cross a length threshold
+- Angle Degeneracy Guard — operational; "strongest fact" and "connection" angles cannot be built from generic predicates such as Recent reporting, and connection angles require distinct substantive predicates
+- Tautological Thesis Guard — operational; current-event theses do not emit constructions such as "recent reporting and recent reporting"
+- Quality Gates Preserved — operational; story score 72, reader-ready 160 words, evidence-depth requirements, prose-integrity blockers, unsupported-fact rules, and the 14-word originality hard gate remain unchanged
+- Canonical law — improve the writer to satisfy the editorial gates; never weaken the gates to accommodate deterministic prose
