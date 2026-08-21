@@ -4,7 +4,6 @@ import { readerContract } from "@/lib/publication/audience";
 import { detectWritingDomain,domainDeckClause,domainMeaning,domainWatch,synthesizeReportingFinding } from "@/lib/publication/writer-synthesis";
 import { originalitySafeHeadline,originalitySafeSubject } from "@/lib/publication/headline-originality";
 import { augmentGroundedDepth } from "@/lib/publication/grounded-depth";
-import { augmentInterpretiveDepth } from "@/lib/publication/interpretive-depth";
 
 function clean(value:string){return value.replace(/\s+/g," ").trim();}
 function sentence(value:string){const c=clean(value);return c?c.replace(/[.!?]+$/g,"")+".":"";}
@@ -57,14 +56,8 @@ function deterministicDraft(graph:ResearchGraph,audience:PublicationAudience,cat
     targetEvidenceWords:24
   });
 
-  const interpretive=augmentInterpretiveDepth({
-    body:meaning,
-    currentNarrativeWords:depth.narrativeWords,
-    targetNarrativeWords:180
-  });
-
   const answer:ArticleSectionDraft={key:"brief",heading:"What changed",body:depth.answerBody,claimIds:depth.answerClaimIds,purpose:"answer"};
-  const meaningSection:ArticleSectionDraft={key:"meaning",heading:"Why it matters",body:interpretive.body,claimIds:[],purpose:"analysis"};
+  const meaningSection:ArticleSectionDraft={key:"meaning",heading:"Why it matters",body:meaning,claimIds:[],purpose:"analysis"};
   const evidenceSection:ArticleSectionDraft={key:"evidence",heading:"What the evidence says",body:depth.evidenceBody,claimIds:depth.evidenceClaimIds,purpose:"evidence"};
   const limitsSection:ArticleSectionDraft={key:"limits",heading:"What remains uncertain",body:sentence(uncertainty),claimIds:counter.map(f=>f.id),purpose:"watch"};
   const watchSection:ArticleSectionDraft={key:"watch",heading:"What to watch next",body:watch,claimIds:[],purpose:"analysis"};
