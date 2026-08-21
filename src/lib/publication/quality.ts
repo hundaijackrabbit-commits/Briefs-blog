@@ -2,6 +2,7 @@ import type { ArticleDraft,OriginalityReport,PublicationQualityReport,StoryContr
 import type { ResearchGraph } from "@/lib/research/types";
 import { evaluateVoice } from "@/lib/publication/voice";
 import { evaluateAudienceFit } from "@/lib/publication/audience";
+import { evaluateReaderFacingProseIntegrity } from "@/lib/publication/prose-integrity";
 
 function clamp(n:number){return Math.max(0,Math.min(100,Math.round(n)));}
 function tokens(text:string){return text.toLowerCase().replace(/[^a-z0-9\s]/g," ").split(/\s+/).filter(Boolean);}
@@ -85,9 +86,10 @@ export function evaluatePublicationQuality(args:{draft:ArticleDraft;graph:Resear
   const specificity=specificityScore(fullText);
   const readerReady=readerReadyChecks(draft);
   const evidenceDepth=evidenceDepthIssues(draft,graph);
+  const proseIntegrity=evaluateReaderFacingProseIntegrity(draft,graph);
 
   const blockers:string[]=[];
-  const warnings=[...voice.warnings,...originality.warnings,...audience.warnings];
+  const warnings=[...voice.warnings,...originality.warnings,...audience.warnings,...proseIntegrity.warnings];
   const minimumGroundedClaims=Math.min(2,graph.findings.length);
 
   if(usedClaims.size<minimumGroundedClaims)blockers.push(`Draft uses ${usedClaims.size} grounded claim(s); at least ${minimumGroundedClaims} are required.`);
@@ -104,7 +106,7 @@ export function evaluatePublicationQuality(args:{draft:ArticleDraft;graph:Resear
   if(audience.score<76)blockers.push("Audience fit is below the V10.2 publication threshold.");
   if(headlineScore<68)blockers.push("Headline is not sufficiently anchored to the researched subject/evidence.");
   if(!storyContract.strongestClaimIds.every(id=>allowedClaims.has(id)))blockers.push("Story contract references claims outside the research graph.");
-  blockers.push(...readerReady.issues,...evidenceDepth);
+  blockers.push(...readerReady.issues,...evidenceDepth,...proseIntegrity.issues);
 
   if(draft.generatedBy==="briefs-deterministic")warnings.push("Deterministic fallback writer used; human editorial review is required before publication.");
 

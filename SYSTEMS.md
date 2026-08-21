@@ -417,3 +417,14 @@ V10 closes the ten-version MVP roadmap. Future work is normal post-MVP iteration
 - Bounded Repair — operational; at most three fixed bridge sentences can be added and no sentence is added once the target is met
 - Speculation Guard — operational; the repair explicitly frames unknown consequences as unresolved rather than filling them with prediction
 - Canonical law — depth may come from explanation after evidence is exhausted, but never from invented facts, duplicated claims, or lowered publication gates
+
+## Publication Engine 1.2.2 — Reader-Facing Prose Integrity Gate
+- Reader-Facing Prose Integrity Gate — operational; a draft cannot pass quality merely because it is grounded, original, and long enough if its visible prose still exposes research scaffolding
+- Event-First Opening Gate — operational; the opening answer must directly state the researched event using meaningful canonical event anchors
+- Methodology-Free Deck Gate — operational; source counts, source-family counts, and evidence-coherence process language cannot substitute for a reader-facing summary
+- Extraction Residue Gate — operational; comma-separated keyword residue emitted by deterministic synthesis is a hard blocker
+- Source-Process Scaffolding Gate — operational; phrases such as "represented in the aligned evidence set", generic account templates, and research-graph language are blocked outside method sections
+- Generic Length-Padding Gate — operational; two or more stock interpretive bridge sentences in the reader-facing article are treated as padding and block publication
+- Normal Attribution Preserved — operational; ordinary source attribution such as "AP reports..." is allowed when it communicates an actual event fact
+- Quality Thresholds Preserved — operational; the 160-word reader-ready minimum, originality hard gates, evidence gates, and unsupported-fact rules are unchanged
+- Canonical law — a technically grounded draft is not publishable if it reads like research plumbing, extracted keywords, or length padding instead of journalism

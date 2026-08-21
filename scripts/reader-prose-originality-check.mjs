@@ -7,7 +7,7 @@ const globalEditorial=read("src/lib/publication/global-editorial.ts");
 const systems=read("SYSTEMS.md");
 const checks=[
   [writer.includes("originalitySafeSubject"),"deterministic writer imports source-safe subject helper"],
-  [writer.includes("const proseSubject=originalitySafeSubject"),"deterministic writer computes a reader-facing prose subject"],
+  [(writer.includes("function proseSubject(graph:ResearchGraph){return originalitySafeSubject")||writer.includes("const proseSubjectValue=proseSubject(graph)")),"deterministic writer computes a reader-facing prose subject"],
   [writer.includes("synthesizeReportingFinding(v,proseSubject(graph)"),"reporting synthesis no longer receives raw canonical source-shaped subject"],
   [writer.includes("domainMeaning(domain,proseSubjectValue)"),"analysis prose uses safe subject"],
   [writer.includes("domainWatch(domain,proseSubjectValue"),"watch prose uses safe subject"],
